@@ -26,12 +26,17 @@ import ConfiguratorOutput from './ConfiguratorOutput';
 const electron = window.require('electron');
 const remote = electron.remote;
 const {process} = remote;
+const fs = remote.require('fs');
 
 console.log('****process.ENV.NODE_ENV', process.env.NODE_ENV );
 const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || '.';
 
 const electron_start_url = process.env.ELECTRON_START_URL;
 const isDev = !!electron_start_url;
+
+const caCertFile = `${executableDir}/ca.crt`;
+const caPrivateKeyFile = `${executableDir}/ca.key`;
+const caExists = fs.existsSync(caCertFile) && fs.existsSync(caPrivateKeyFile);
 
 const os = remote.require('os');
 
@@ -77,7 +82,7 @@ class StepperApp extends Component {
       subnetMask:             '255.255.255.0',
 
       // other options
-      optRegenerateCA:        isDev ? false: true,
+      optRegenerateCA:        (isDev && caExists) ? false: true,
       optStartWithWANUp:      true,
       optUseUDP:              true,
       optSendLANTrafficOnly:  true,
