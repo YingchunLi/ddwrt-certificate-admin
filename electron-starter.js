@@ -6,6 +6,7 @@ const BrowserWindow = electron.BrowserWindow;
 
 const path = require('path');
 const url = require('url');
+const fs = require('fs');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -17,8 +18,12 @@ console.log('****dialog in main', dialog);
 function createWindow () {
   console.log('****process.env.NODE_ENV', process.env.NODE_ENV);
   if (process.env.ELECTRON_START_URL)  {
-    console.log('adding tool extension');
-    BrowserWindow.addDevToolsExtension('/Users/yingchunli/Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/2.5.2_0');
+    // comment this out or change it if you have it on a different location
+    const reactPluginPath = '/Users/yingchunli/Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/3.1.0_0';
+    if (fs.existsSync(reactPluginPath)) {
+      console.log('adding tool extension');
+      BrowserWindow.addDevToolsExtension(reactPluginPath);
+    }
   }
 
   // Create the browser window.
