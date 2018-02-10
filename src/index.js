@@ -8,7 +8,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 
 // import * as Theme from './theme';
 
-import './bootstrap.css';
+// import './bootstrap.css';
 import App from './App';
 
 // not used now
