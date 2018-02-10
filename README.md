@@ -17,7 +17,7 @@ See `screenshots` folder.
 - VPN Parameters
 ![VPN Parameters](screenshots/VPN%20Parameters.png)
 - User names and passwords
-![User names and passwords](./screenshots/User%20names%20and passwords.png)
+![User names and passwords](screenshots/User%20names%20and%20passwords.png)
 - Configurator output
-![Configurator output](./screenshots/Configurator%20output.png)
+![Configurator output](screenshots/Configurator%20output.png)
 
