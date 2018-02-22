@@ -1,6 +1,5 @@
 import React from 'react';
 
-import _ from 'lodash';
 
 import IconButton from 'material-ui/IconButton';
 import DescriptionIcon from 'material-ui/svg-icons/action/description';

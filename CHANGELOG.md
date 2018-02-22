@@ -9,6 +9,13 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 
 ## [Unreleased]
+## [0.9.0] - 2018-02-10
+Import code to github
+### Changed
+- Fix issue when ca file does not exist
+- Conditionally load react plugin
+- Update [README.md](README.md) file
+
 ## [0.8.3] - 2017-11-30
 ### Changed
 - Make 'configurator output' certificate boxes show 6 lines

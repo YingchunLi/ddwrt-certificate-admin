@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import _ from 'lodash';
-
 import {Card, CardHeader, CardText} from 'material-ui/Card';
 import { Table, TableRow, TableRowColumn, TableBody, } from 'material-ui/Table';
 
@@ -14,19 +12,16 @@ import {renderTableRow, subnetMaskToCidrPrefix} from './utils';
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams} from './certificate-utils';
 import VPNParameters from "./VPNParameters";
 
-// import * as fs from 'fs';
-
 // electron api
 const electron = window.require('electron');
 const remote = electron.remote;
 const clipboard = electron.clipboard;
-const {app,process} = remote;
+const {process} = remote;
 const fs = remote.require('fs');
 
 const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || '.';
 const electron_start_url = process.env.ELECTRON_START_URL;
 const isDev = !!electron_start_url;
-console.log('****isDev', isDev);
 
 const staticDhPem = `-----BEGIN DH PARAMETERS-----
 MIIBCQKCAQCKgoa/NBgUDSFrEE/6twb/EDLAfMllfdU/w8/Gy/lEXxEiAApWgjuF
@@ -174,8 +169,8 @@ key ${username}.key
   };
 
   const generateAdditionalConfig = () => {
-    const tcpUdp = vpnParameters.optUseUDP ? 'udp': 'tcp';
-    const redirectGateway = vpnParameters.optSendLANTrafficOnly ? '' : 'push “redirect-gateway def1”';
+    // const tcpUdp = vpnParameters.optUseUDP ? 'udp': 'tcp';
+    // const redirectGateway = vpnParameters.optSendLANTrafficOnly ? '' : 'push “redirect-gateway def1”';
 
     const configurableOptions =
       [
