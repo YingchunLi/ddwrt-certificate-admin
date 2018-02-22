@@ -13,15 +13,13 @@ const fs = require('fs');
 let mainWindow;
 
 const dialog = electron.dialog;
-console.log('****dialog in main', dialog);
 
 function createWindow () {
-  console.log('****process.env.NODE_ENV', process.env.NODE_ENV);
   if (process.env.ELECTRON_START_URL)  {
     // comment this out or change it if you have it on a different location
-    const reactPluginPath = '/Users/yingchunli/Library/Application Support/Google/Chrome/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/3.1.0_0';
+    const reactPluginPath = 'chromeExtensions/react_3.1.0_0';
     if (fs.existsSync(reactPluginPath)) {
-      console.log('adding tool extension');
+      console.log('adding React Developer Tools chrome extension');
       BrowserWindow.addDevToolsExtension(reactPluginPath);
     }
   }
@@ -32,12 +30,6 @@ function createWindow () {
       nodeIntegrationInWorker: true
     }});
 
-  // and load the index.html of the app.
-  // mainWindow.loadURL(url.format({
-  //   pathname: path.join(__dirname, 'index.html'),
-  //   protocol: 'file:',
-  //   slashes: true
-  // }))
 
   // and load the index.html of the app.
   const startUrl = process.env.ELECTRON_START_URL || url.format({
@@ -47,19 +39,10 @@ function createWindow () {
   });
   mainWindow.loadURL(startUrl);
 
-  // mainWindow.loadURL('http://localhost:3000');
-
   // Open the DevTools.
   if (process.env.ELECTRON_START_URL) {
     mainWindow.webContents.openDevTools();
   }
-
-   console.error('app is', app);
-  // mainWindow.console.dir(app);
-  // mainWindow.console.dir(electron);
-  // console.dir(app);
-  // console.dir(electron);
-  // console.log(app.getAppPath())
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -70,10 +53,6 @@ function createWindow () {
   })
 }
 
-//
-
-
-//
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
