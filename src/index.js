@@ -11,7 +11,7 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 // import './bootstrap.css';
 import App from './App';
 
-// not used now
+// theme customization: not used now
 // const muiTheme = getMuiTheme({
 //   palette: {
 //     primary1Color: Theme.PRIMARY_COLOR,

@@ -67,7 +67,6 @@ const ClientOptions = ({clientOptions, certificateOnlyAuth, onChange}) => {
     onChange(newClientOptions);
   };
 
-  // console.log('****', 'ClientOptions rendered with clientOptions:', clientOptions);
   return (
     <div>
       {

@@ -184,8 +184,6 @@ key ${username}.key
         //'keepalive 10 120'
       ].filter(o => o !== '').join('\n');
 
-    console.log('****configurableOptions', configurableOptions);
-
 
     return `${configurableOptions}
 

@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import _ from 'lodash';
-// import os from 'os';
 import ip from 'ip';
 
 import {
@@ -10,9 +9,6 @@ import {
   StepButton,
 } from 'material-ui/Stepper';
 
-// import InputIcon from 'material-ui/svg-icons/action/input';
-// import SettingsIcon from 'material-ui/svg-icons/action/settings';
-// import BuildIcon from 'material-ui/svg-icons/action/build';
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
 import Snackbar from 'material-ui/Snackbar';
@@ -21,14 +17,11 @@ import VPNParameters from './VPNParameters';
 import ClientOptions from './ClientOptions';
 import ConfiguratorOutput from './ConfiguratorOutput';
 
-// const ip = require('ip');
-
 const electron = window.require('electron');
 const remote = electron.remote;
 const {process} = remote;
 const fs = remote.require('fs');
 
-console.log('****process.ENV.NODE_ENV', process.env.NODE_ENV );
 const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || '.';
 
 const electron_start_url = process.env.ELECTRON_START_URL;
