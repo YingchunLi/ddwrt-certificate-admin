@@ -16,14 +16,7 @@ import MenuItem from 'material-ui/MenuItem';
 
 import {renderTableRow, renderTextFieldTableRow, renderRadioButtonGroup} from './utils';
 
-
-const electron = window.require('electron');
-const remote = electron.remote;
-const {dialog, process} = remote;
-const fs = remote.require('fs');
-const ping = remote.require('ping');
-
-const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || '.';
+import {dialog, fs, ping, checkIfCAExists} from './environment';
 
 const certificatePropertiesFields = [
   ['Country', 'countryName'],
@@ -152,10 +145,7 @@ class VPNParameters extends Component {
 
   render() {
     const {vpnParameters = {}} = this.props;
-
-    const caCertFile = `${executableDir}/ca.crt`;
-    const caPrivateKeyFile = `${executableDir}/ca.key`;
-    const caExists = fs.existsSync(caCertFile) && fs.existsSync(caPrivateKeyFile);
+    const caExists = checkIfCAExists();
 
     const numberOfUsersElement =
       <DropDownMenu value={vpnParameters.numberOfUsers} onChange={this.changeNumberOfUsers} >

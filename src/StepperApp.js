@@ -1,6 +1,5 @@
 import React, {Component} from 'react';
 import _ from 'lodash';
-import ip from 'ip';
 
 import {
   Step,
@@ -17,47 +16,8 @@ import VPNParameters from './VPNParameters';
 import ClientOptions from './ClientOptions';
 import ConfiguratorOutput from './ConfiguratorOutput';
 
-const electron = window.require('electron');
-const remote = electron.remote;
-const {process} = remote;
-const fs = remote.require('fs');
-
-const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || '.';
-
-const electron_start_url = process.env.ELECTRON_START_URL;
-const isDev = !!electron_start_url;
-
-const caCertFile = `${executableDir}/ca.crt`;
-const caPrivateKeyFile = `${executableDir}/ca.key`;
-const caExists = fs.existsSync(caCertFile) && fs.existsSync(caPrivateKeyFile);
-
-const os = remote.require('os');
-
-const interfaces = os.networkInterfaces();
-const privateAddresses = [];
-const publicAddresses = [];
-_.forEach(interfaces, (addresses, interfaceName) => {
-  const noneInternalAddresses = addresses.filter(address => address.family === 'IPv4' && !address.internal);
-
-  noneInternalAddresses.forEach(address => {
-    if (address.internal) return;
-    if (ip.isPrivate(address.address)) {
-      privateAddresses.push({interfaceName, ...address});
-    } else {
-      publicAddresses.push({interfaceName, ...address});
-    }
-
-  });
-});
-
-console.log('****publicAddresses', publicAddresses);
-console.log('****privateAddresses', privateAddresses);
-
-const privateAddress = privateAddresses.length > 0 && privateAddresses[0].address;
-const internalNetwork = privateAddress ? ip.mask(privateAddress, '255.255.255.0'): '192.168.1.0';
-const routerInternalIP = ip.or(internalNetwork, '0.0.0.1');
-
-const publicAddress = publicAddresses.length > 0 ? publicAddresses[0].address : isDev ? '47.23.38.149' : '';
+import {executableDir, isDev, caExists} from './environment';
+import {publicAddress, internalNetwork, routerInternalIP} from './environment';
 
 class StepperApp extends Component {
   state = {
@@ -69,13 +29,13 @@ class StepperApp extends Component {
 
       networkPublicIpOrDDNSAddressOfRouter: publicAddress,
       vpnPort:                1194,
-      internalNetwork:    internalNetwork,
+      internalNetwork:        internalNetwork,
       routerInternalIP:       routerInternalIP,
       networkSegment:         '10.0.8.0',
       subnetMask:             '255.255.255.0',
 
       // other options
-      optRegenerateCA:        (isDev && caExists) ? false: true,
+      optRegenerateCA:        !(isDev && caExists),
       optStartWithWANUp:      true,
       optUseUDP:              true,
       optSendLANTrafficOnly:  true,

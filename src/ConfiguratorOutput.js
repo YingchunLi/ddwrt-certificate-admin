@@ -13,15 +13,8 @@ import {buildCA, readExistingCA, buildClientCertificate, generateDHParams} from 
 import VPNParameters from "./VPNParameters";
 
 // electron api
-const electron = window.require('electron');
-const remote = electron.remote;
-const clipboard = electron.clipboard;
-const {process} = remote;
-const fs = remote.require('fs');
-
-const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || '.';
-const electron_start_url = process.env.ELECTRON_START_URL;
-const isDev = !!electron_start_url;
+import {fs, executableDir, isDev, clipboard} from './environment';
+import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
 
 const staticDhPem = `-----BEGIN DH PARAMETERS-----
 MIIBCQKCAQCKgoa/NBgUDSFrEE/6twb/EDLAfMllfdU/w8/Gy/lEXxEiAApWgjuF
@@ -54,8 +47,8 @@ const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, o
     const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem} = await buildCA(vpnParameters);
 
     // create client key pairs and sign their public key using ca root certificate
-    fs.writeFileSync(`${executableDir}/ca.crt`, caCertPem);
-    fs.writeFileSync(`${executableDir}/ca.key`, caPrivateKeyPem);
+    fs.writeFileSync(caCertFile, caCertPem);
+    fs.writeFileSync(caPrivateKeyFile, caPrivateKeyPem);
 
     return {
       caCert,
@@ -66,11 +59,8 @@ const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, o
   };
 
   const reuseExistingCA = async () => {
-    const caCertFile = `${executableDir}/ca.crt`;
-    const caPrivateKeyFile = `${executableDir}/ca.key`;
     try {
       //TODO: check existence
-
       const caCertPem = fs.readFileSync(caCertFile, 'utf8');
       const caPrivateKeyPem = fs.readFileSync(caPrivateKeyFile, 'utf8');
 
@@ -99,7 +89,7 @@ const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, o
     console.log('end creating dh.pem');
     console.log('dh.pem:', dhParamsPem);
 
-    fs.writeFileSync(`${executableDir}/dh.pem`, dhParamsPem);
+    fs.writeFileSync(dhPemFile, dhParamsPem);
 
     return dhParamsPem;
   };
