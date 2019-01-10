@@ -13,7 +13,7 @@ import RaisedButton from 'material-ui/RaisedButton';
 import Snackbar from 'material-ui/Snackbar';
 
 import VPNParameters from './VPNParameters';
-import ClientOptions from './ClientOptions';
+import CertificateOptions from './CertificateOptions';
 import ConfiguratorOutput from './ConfiguratorOutput';
 
 import {executableDir, isDev, caExists} from './environment';
@@ -35,12 +35,14 @@ class StepperApp extends Component {
       subnetMask:             '255.255.255.0',
 
       // other options
+      optRouterMode:          'DD-WRT',
       optRegenerateCA:        !(isDev && caExists),
       optStartWithWANUp:      true,
       optUseUDP:              true,
       optSendLANTrafficOnly:  true,
       optCertificateOnlyAuth: true,
     },
+    serverOptions: [{username: 'server1'}],
     clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
 
     configuratorOutput: {
@@ -117,7 +119,7 @@ class StepperApp extends Component {
   };
 
   render() {
-    const {vpnParameters, clientOptions, configuratorOutput, finished, stepIndex} = this.state;
+    const {vpnParameters, serverOptions, clientOptions, configuratorOutput, finished, stepIndex} = this.state;
     const contentStyle = {margin: '0 16px'};
 
     const vpnParametersPage =
@@ -127,16 +129,26 @@ class StepperApp extends Component {
       />;
 
     const clientOptionsPage =
-      <ClientOptions
-        clientOptions={clientOptions}
-        numberOfUsers={vpnParameters.numberOfUsers}
-        certificateOnlyAuth={vpnParameters.optCertificateOnlyAuth}
-        onChange={clientOptions => this.setState({clientOptions})}
-      />;
+      <div>
+        <CertificateOptions
+          mode="Server"
+          certificateOptions={serverOptions}
+          numberOfUsers={vpnParameters.numberOfUsers}
+          certificateOnlyAuth={vpnParameters.optCertificateOnlyAuth}
+          onChange={serverOptions => this.setState({serverOptions})}
+        />
+        <CertificateOptions
+          certificateOptions={clientOptions}
+          numberOfUsers={vpnParameters.numberOfUsers}
+          certificateOnlyAuth={vpnParameters.optCertificateOnlyAuth}
+          onChange={clientOptions => this.setState({clientOptions})}
+        />
+      </div>;
 
     const configuratorOutputPage =
       <ConfiguratorOutput
         vpnParameters={vpnParameters}
+        serverOptions={serverOptions}
         clientOptions={clientOptions}
         configuratorOutput={configuratorOutput}
         onChange={configuratorOutput => {console.log(configuratorOutput);this.setState({configuratorOutput})}}

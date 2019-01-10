@@ -227,6 +227,12 @@ class VPNParameters extends Component {
             <Table>
               <TableBody displayRowCheckbox={false} showRowHover={true}>
                 {
+                  renderTableRow('Router mode',
+                    renderRadioButtonGroup(['DD-WRT', 'Edge Server'], ['DD-WRT', 'Edge Server'],
+                      'optRouterMode', vpnParameters, this.handleChange))
+                }
+
+                {
                   renderTableRow('Generate a new CA, right?',
                     renderRadioButtonGroup(['Yes, keep it extra secure', 'No, use the existing one'], [true, false],
                       'optRegenerateCA', vpnParameters, this.handleChange, {option2Disabled: !caExists}))

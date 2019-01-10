@@ -12,26 +12,25 @@ import TextField from 'material-ui/TextField';
 
 import {renderTableRow} from './utils';
 
-const ClientOption = ({clientOption, idx, certificateOnlyAuth, nameCounts, onChange}) => {
+const CertificateOption = ({certificateOption, idx, certificateOnlyAuth, nameCounts, onChange, mode}) => {
   const handleChange = (field, value) => {
-    const newClientOption = update(clientOption, {[field]: {$set: value}});
-    onChange(idx, newClientOption);
+    const newOption = update(certificateOption, {[field]: {$set: value}});
+    onChange(idx, newOption);
   };
-
-  const errorText = (nameCounts && nameCounts[clientOption.username] > 1) ? 'Duplicate username': '';
+  const errorText = (nameCounts && nameCounts[certificateOption.username] > 1) ? 'Duplicate username': '';
   return (
     <Card key={idx} initiallyExpanded={true}>
       {/*<CardHeader title={`Client ${idx + 1} Options`} actAsExpander={true} showExpandableButton={true}/>*/}
-      <CardHeader title={`Client ${idx + 1} Options`} />
+      <CardHeader title={mode === 'Server' ? 'Server Options' : `${mode} ${idx + 1} Options`} />
       {/*<CardText expandable={true}>*/}
       <CardText>
         <Table>
           <TableBody displayRowCheckbox={false} showRowHover={true}>
             {
-              renderTableRow('Client File Username',
+              renderTableRow(`${mode} File Username`,
                 <TextField
-                  id={`client${idx+1}Username`}
-                  value={clientOption.username || ''}
+                  id={`${mode}${idx+1}Username`}
+                  value={certificateOption.username || ''}
                   errorText={errorText}
                   onChange={(event, value)  => handleChange('username', value) }
                 />
@@ -40,10 +39,10 @@ const ClientOption = ({clientOption, idx, certificateOnlyAuth, nameCounts, onCha
 
             {
               !certificateOnlyAuth &&
-              renderTableRow('Client File Password',
+              renderTableRow(`${mode} File Password`,
                 <TextField
-                  id={`client${idx+1}Password`}
-                  value={clientOption.password || ''}
+                  id={`${mode}${idx+1}Password`}
+                  value={certificateOption.password || ''}
                   onChange={(event, value)  => handleChange('password', value) }
                 />
               )
@@ -57,26 +56,27 @@ const ClientOption = ({clientOption, idx, certificateOnlyAuth, nameCounts, onCha
 };
 
 
-const ClientOptions = ({clientOptions, certificateOnlyAuth, onChange}) => {
+const CertificateOptions = ({certificateOptions, certificateOnlyAuth, onChange, mode="Client"}) => {
 
-  const nameCounts = _.countBy(clientOptions, clientOption => clientOption.username);
+  const nameCounts = _.countBy(certificateOptions, option => option.username);
 
-  const handleClientOptionChange = (clientIdx, clientOption) => {
-    let newClientOptions = clientOptions.slice();
-    newClientOptions[clientIdx] = clientOption;
-    onChange(newClientOptions);
+  const handleCertificateOptionChange = (idx, option) => {
+    let newOptions = certificateOptions.slice();
+    newOptions[idx] = option;
+    onChange(newOptions);
   };
 
   return (
     <div>
       {
-        clientOptions.map((clientOption, idx) =>
-          <ClientOption
+        certificateOptions.map((certificateOption, idx) =>
+          <CertificateOption
+            mode={mode}
             key={idx}
-            clientOption={clientOption}
+            certificateOption={certificateOption}
             idx={idx}
             certificateOnlyAuth={certificateOnlyAuth}
-            onChange={handleClientOptionChange}
+            onChange={handleCertificateOptionChange}
             nameCounts={nameCounts}
           />
         )
@@ -85,10 +85,10 @@ const ClientOptions = ({clientOptions, certificateOnlyAuth, onChange}) => {
   );
 };
 
-ClientOptions.propTypes = {
+CertificateOptions.propTypes = {
   numberOfUsers:        PropTypes.number,
   certificateOnlyAuth:  PropTypes.bool,
 };
-ClientOptions.defaultProps = {};
+CertificateOptions.defaultProps = {};
 
-export default ClientOptions;
+export default CertificateOptions;

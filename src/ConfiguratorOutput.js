@@ -25,7 +25,7 @@ DkzXrybrGDSv1E48RiBuNOON02RoUrz1ERNcoF2C+MWjzbJ9e5iryrIB4l5ev4Wr
 e7zH50OiQfDtv4ofD/KUPQdx38F+jz51AgMAAAI=
 -----END DH PARAMETERS-----`;
 
-const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, onChange = ()=>{}, showMessage}) => {
+const ConfiguratorOutput = ({vpnParameters, serverOptions, clientOptions, configuratorOutput, onChange = ()=>{}, showMessage}) => {
 
   const {
     caCertPem,
@@ -38,6 +38,8 @@ const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, o
     stateText,
   }
     = configuratorOutput;
+
+  const optRouterMode = vpnParameters.optRouterMode;
 
   const updateState = stateText => onChange({...configuratorOutput, stateText, certificateStage: 1});
 
@@ -78,7 +80,6 @@ const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, o
     }
   };
 
-
   const generateDHParam = async () => {
     // create DH.pem
     console.log('start creating dhparam');
@@ -92,6 +93,70 @@ const ConfiguratorOutput = ({vpnParameters, clientOptions, configuratorOutput, o
     fs.writeFileSync(dhPemFile, dhParamsPem);
 
     return dhParamsPem;
+  };
+
+  const generateServerConfigs = async (caCert, caPrivateKey) => {
+    // create client key pair
+    console.log('generating server certificates');
+    if (serverOptions && serverOptions.length > 0) {
+
+
+      let date = new Date();
+      console.log('****date', date);
+      if (isDev) {
+        date.setDate(date.getDate() - 1);
+        console.log('****date', date);
+      }
+
+      const userKeysDir = vpnParameters.userKeysDir ||executableDir;
+      for (let i = 0; i < serverOptions.length; ++i) {
+        const option = serverOptions[i];
+        const username = option.username;
+        const clientCertOptions =
+          {
+            commonName: username,
+            keySize: vpnParameters.keySize,
+            password: option.password,
+          };
+        updateState(`Generating certificates for server ${i+1}`);
+        console.log(`Generating certificates for server ${i+1}`);
+
+        const {certPem, privateKeyPem} =
+          await buildClientCertificate(caCert, caPrivateKey, {...clientCertOptions, validityStart: date});
+
+        // generate client opvn file
+        const clientOvpn=`client
+remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
+port ${vpnParameters.vpnPort}
+dev tun
+#secret ${username}.key
+proto tcp
+
+comp-lzo
+route-gateway ${vpnParameters.routerInternalIP} 
+float
+
+ca ca.crt
+cert ${username}.crt
+key ${username}.key
+`;
+
+        const destDir = `${userKeysDir}/${username}`;
+        // const stat = fs.statSync(clientDestDir);
+        // if (stat.isDirectory()) {
+        //   fs.rmdirSync(clientDestDir);
+        // }
+
+        if (!fs.existsSync(destDir)) {
+          console.log(`making dir [${destDir}]`);
+          fs.mkdirSync(destDir);
+        }
+        fs.writeFileSync(`${destDir}/${username}.crt`, certPem);
+        fs.writeFileSync(`${destDir}/${username}.key`, privateKeyPem);
+        fs.writeFileSync(`${destDir}/${username}.ovpn`, clientOvpn);
+
+      }
+    }
   };
 
   const generateClientConfigs = async (caCert, caPrivateKey) => {
@@ -200,6 +265,9 @@ iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
     updateState(buildCAMessage);
     console.log(buildCAMessage);
     const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem } = !vpnParameters.optRegenerateCA ? await reuseExistingCA() : await generateServerCA();
+
+    updateState('Generating server certificates');
+    await generateServerConfigs(caCert, caPrivateKey);
 
     updateState('Generating client certificates');
     await generateClientConfigs(caCert, caPrivateKey);
