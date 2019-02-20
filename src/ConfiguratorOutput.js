@@ -9,21 +9,13 @@ import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
 import {renderTableRow, subnetMaskToCidrPrefix} from './utils';
-import {buildCA, readExistingCA, buildClientCertificate, generateDHParams} from './certificate-utils';
+import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
 import VPNParameters from "./VPNParameters";
 
 // electron api
 import {fs, executableDir, isDev, clipboard} from './environment';
 import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
 
-const staticDhPem = `-----BEGIN DH PARAMETERS-----
-MIIBCQKCAQCKgoa/NBgUDSFrEE/6twb/EDLAfMllfdU/w8/Gy/lEXxEiAApWgjuF
-RuHHQ2PaharGPODFyAxxUMfGcMdCuwzAUZYEYtSRfnQsvA4v7m+/2LEz9Yhx5eLo
-997a+hvGbLBBpf8VZjUTNSjnQvpYzZrO94ACUmCk+DQv7tvh/qe4GRJPp8MwK4DQ
-nJLGAQeXa1WgaRtGIU3x1SRp2B4zZsj2BrGUUHaz7j4Pi+dTMcwABfHLlbnYR1QE
-DkzXrybrGDSv1E48RiBuNOON02RoUrz1ERNcoF2C+MWjzbJ9e5iryrIB4l5ev4Wr
-e7zH50OiQfDtv4ofD/KUPQdx38F+jz51AgMAAAI=
------END DH PARAMETERS-----`;
 
 const ConfiguratorOutput = ({vpnParameters, serverOptions, clientOptions, configuratorOutput, onChange = ()=>{}, showMessage}) => {
 
