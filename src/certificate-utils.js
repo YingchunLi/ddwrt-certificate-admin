@@ -2,6 +2,11 @@ const forge = require('node-forge');
 
 const pki = forge.pki;
 
+// dos2unix
+String.prototype.removeCarriageReturns = function (){
+  return this.replace(/\r\n/g, "\n");
+};
+
 // generate a keypair
 export const generateKeyPair = (keysize=2048, encryptWithPassword) => {
   return new Promise((resolve, reject) => {
@@ -14,9 +19,10 @@ export const generateKeyPair = (keysize=2048, encryptWithPassword) => {
 
         // convert private key to PEM
         const privateKey = keys.privateKey;
-        const privateKeyPem = encryptWithPassword
+        let privateKeyPem = encryptWithPassword
           ? pki.encryptRsaPrivateKey(privateKey, encryptWithPassword)
           : pki.privateKeyToPem(privateKey);
+        privateKeyPem = privateKeyPem.removeCarriageReturns();
         resolve({keys, privateKeyPem});
       }
     );
@@ -123,7 +129,7 @@ export const buildCA = async (options = {}) => {
   caCert.sign(caPrivateKey);
 
   // convert a Forge certificate to PEM
-  const caCertPem = pki.certificateToPem(caCert);
+  const caCertPem = pki.certificateToPem(caCert).removeCarriageReturns();
 
   return {caCert, caPrivateKey, caCertPem, caPrivateKeyPem};
 };
@@ -259,3 +265,12 @@ export const generateDHParams = () => {
   });
 };
 
+
+export const staticDhPem = `-----BEGIN DH PARAMETERS-----
+MIIBCQKCAQCKgoa/NBgUDSFrEE/6twb/EDLAfMllfdU/w8/Gy/lEXxEiAApWgjuF
+RuHHQ2PaharGPODFyAxxUMfGcMdCuwzAUZYEYtSRfnQsvA4v7m+/2LEz9Yhx5eLo
+997a+hvGbLBBpf8VZjUTNSjnQvpYzZrO94ACUmCk+DQv7tvh/qe4GRJPp8MwK4DQ
+nJLGAQeXa1WgaRtGIU3x1SRp2B4zZsj2BrGUUHaz7j4Pi+dTMcwABfHLlbnYR1QE
+DkzXrybrGDSv1E48RiBuNOON02RoUrz1ERNcoF2C+MWjzbJ9e5iryrIB4l5ev4Wr
+e7zH50OiQfDtv4ofD/KUPQdx38F+jz51AgMAAAI=
+-----END DH PARAMETERS-----`;

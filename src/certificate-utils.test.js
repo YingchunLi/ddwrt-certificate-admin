@@ -5,7 +5,7 @@ import forge from 'node-forge';
 // import dhparam from 'dhparam';
 
 
-const test = () => {
+const test = async () => {
   const options = {
     'commonName': 'example.org',
     'countryName': 'AU',
@@ -14,7 +14,7 @@ const test = () => {
     'organizationName': 'DummySoft',
     'organizationalUnitName': 'Development'
   };
-  const {cert, certPem, privateKeyPem, keys:caKeys} = buildCA(options);
+  const {cert, certPem, privateKeyPem, keys:caKeys} = await buildCA(options);
   console.log(certPem);
   console.log(privateKeyPem);
 
@@ -67,7 +67,7 @@ const test = () => {
 
 };
 
-it('Can generate root ca and client ca', () => {
+it('Can generate root ca and client ca', async () => {
   test();
 });
 
