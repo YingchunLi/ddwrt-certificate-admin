@@ -88,16 +88,13 @@ const ConfiguratorOutput = ({vpnParameters, serverOptions, clientOptions, config
   };
 
   const generateServerConfigs = async (caCert, caPrivateKey) => {
-    // create client key pair
-    console.log('generating server certificates');
+    // create server key pair
     if (serverOptions && serverOptions.length > 0) {
-
+      console.log('generating server certificates');
 
       let date = new Date();
-      console.log('****date', date);
       if (isDev) {
         date.setDate(date.getDate() - 1);
-        console.log('****date', date);
       }
 
       const userKeysDir = vpnParameters.userKeysDir ||executableDir;
@@ -153,15 +150,12 @@ key ${username}.key
 
   const generateClientConfigs = async (caCert, caPrivateKey) => {
     // create client key pair
-    console.log('generating client certificates');
     if (clientOptions && clientOptions.length > 0) {
-
+      console.log('generating client certificates');
 
       let date = new Date();
-      console.log('****date', date);
       if (isDev) {
         date.setDate(date.getDate() - 1);
-        console.log('****date', date);
       }
 
       const destDir = vpnParameters.userKeysDir ||executableDir;

@@ -42,7 +42,7 @@ class StepperApp extends Component {
       optSendLANTrafficOnly:  true,
       optCertificateOnlyAuth: true,
     },
-    serverOptions: [{username: 'server1'}],
+    // serverOptions: [{username: 'server1'}],
     clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
 
     configuratorOutput: {
@@ -130,6 +130,7 @@ class StepperApp extends Component {
 
     const clientOptionsPage =
       <div>
+        {serverOptions &&
         <CertificateOptions
           mode="Server"
           certificateOptions={serverOptions}
@@ -137,6 +138,7 @@ class StepperApp extends Component {
           certificateOnlyAuth={vpnParameters.optCertificateOnlyAuth}
           onChange={serverOptions => this.setState({serverOptions})}
         />
+        }
         <CertificateOptions
           certificateOptions={clientOptions}
           numberOfUsers={vpnParameters.numberOfUsers}
