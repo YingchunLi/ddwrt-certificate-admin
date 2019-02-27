@@ -46,6 +46,13 @@ class StepperApp extends Component {
     clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
 
     configuratorOutput: {
+      configuratorMode: 'manual',
+      sshServer:      '',
+      sshServerErrorText: '',
+      sshPort:        22,
+      sshUsername:    '',
+      sshPassword:    '',
+
       caCertPem:       '',
       caPrivateKeyPem:  '',
       dhParamsPem:      '',
@@ -53,6 +60,10 @@ class StepperApp extends Component {
       ipTablesConfig: '',
       certificateStage: 0,
       stateText: '',
+    },
+
+    configuratorStatus : {
+      sshAutoConfigureOutput: '',
     },
 
     // stepper related
@@ -119,7 +130,7 @@ class StepperApp extends Component {
   };
 
   render() {
-    const {vpnParameters, serverOptions, clientOptions, configuratorOutput, finished, stepIndex} = this.state;
+    const {vpnParameters, serverOptions, clientOptions, configuratorOutput, configuratorStatus, finished, stepIndex} = this.state;
     const contentStyle = {margin: '0 16px'};
 
     const vpnParametersPage =
@@ -154,6 +165,8 @@ class StepperApp extends Component {
         clientOptions={clientOptions}
         configuratorOutput={configuratorOutput}
         onChange={configuratorOutput => {console.log(configuratorOutput);this.setState({configuratorOutput})}}
+        configuratorStatus={configuratorStatus}
+        onConfiguratorStatusChange={(key, value) => this.setState({configuratorStatus: {...configuratorStatus, [key]: value}})}
         showMessage={this.showMessage}
       />;
 

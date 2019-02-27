@@ -10,6 +10,7 @@ export const dialog = electron.dialog;
 export const fs = remote.require('fs');
 export const os = remote.require('os');
 export const ping = remote.require('ping');
+export const node_ssh = remote.require('node-ssh');
 
 // env related
 const {process} = remote;

@@ -15,6 +15,7 @@ import DropDownMenu from 'material-ui/DropDownMenu';
 import MenuItem from 'material-ui/MenuItem';
 
 import {renderTableRow, renderTextFieldTableRow, renderRadioButtonGroup} from './utils';
+import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
 import {dialog, fs, ping, checkIfCAExists} from './environment';
 
@@ -62,9 +63,7 @@ const networkPropertiesFields =
     ],
   ];
 
-const ADDRESS_BEING_CHECKED = 'Checking if address is reachable ...';
-const ADDRESS_IS_REACHABLE = 'Address is reachable';
-const ADDRESS_NOT_REACHABLE = "This address doesn't respond to ping. Are you sure it's right?";
+
 
 class VPNParameters extends Component {
 
@@ -228,7 +227,7 @@ class VPNParameters extends Component {
               <TableBody displayRowCheckbox={false} showRowHover={true}>
                 {
                   renderTableRow('Router mode',
-                    renderRadioButtonGroup(['DD-WRT', 'Edge Server'], ['DD-WRT', 'Edge Server'],
+                    renderRadioButtonGroup(['DD-WRT', 'Edge Router'], ['DD-WRT', 'EDGE-SERVER'],
                       'optRouterMode', vpnParameters, this.handleChange))
                 }
 

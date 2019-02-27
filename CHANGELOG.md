@@ -7,8 +7,22 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 ## [Todos]
 - [ ] I'm thinking we should add two more UI elements to the "Other Options" section. These will decide whether to use SHA1 and Blowfish, or other algorithms instead. I'll get you more information on that, but they would both be drop-downs, and would affect the last set of lines in the configurator output, as well as a line or two in the .ovpn file output.
 
+## [EdgeServer todos] 
+- [x] output server keys would be output to correct files
+- [x] option to send server keys to a folder
+- [x] uploaded server keys to edgeServer via ssh
+- [ ] generate credential files with random name, add "auth-user-pass $SOME_CREDENTIALS.txt" line
+
 
 ## [Unreleased]
+## [2.0.0] - 2019-02-27
+### Changed
+- Add 'EdgeRouter' mode
+- Add auto-configurate option for EdgeRouter which:
+  * ssh to the router
+  * uploads server keys
+  * run configure commands
+
 ## [0.9.0] - 2018-02-10
 Import code to github
 ### Changed

@@ -8,18 +8,42 @@ import CircularProgress from 'material-ui/CircularProgress';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import {renderTableRow, subnetMaskToCidrPrefix} from './utils';
+import {renderTableRow, renderTextFieldTableRow, subnetMaskToCidrPrefix} from './utils';
+import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
+
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
 import VPNParameters from "./VPNParameters";
 
 // electron api
-import {fs, executableDir, isDev, clipboard} from './environment';
+import {fs, executableDir, isDev, clipboard, ping} from './environment';
 import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
+import {RadioButton, RadioButtonGroup} from "material-ui/RadioButton";
+import _ from "lodash";
+
+import {autoConfigViaSSH} from './ssh-utils';
+import {isDdWrtMode, isEdgeRouterMode, generateAdditionalConfig, generateIpTablesConfig} from "./vpn-utils";
 
 
-const ConfiguratorOutput = ({vpnParameters, serverOptions, clientOptions, configuratorOutput, onChange = ()=>{}, showMessage}) => {
+const ConfiguratorOutput = (
+  {
+    vpnParameters,
+    serverOptions,
+    clientOptions,
+    configuratorOutput,
+    onChange = ()=>{},
+    configuratorStatus,
+    onConfiguratorStatusChange,
+    showMessage
+  }) => {
 
   const {
+    configuratorMode,
+    sshServer,
+    sshServerErrorText,
+    sshPort,
+    sshUsername,
+    sshPassword,
+
     caCertPem,
     caPrivateKeyPem,
     dhParamsPem,
@@ -32,6 +56,8 @@ const ConfiguratorOutput = ({vpnParameters, serverOptions, clientOptions, config
     = configuratorOutput;
 
   const optRouterMode = vpnParameters.optRouterMode;
+  const ddWrtMode = isDdWrtMode(optRouterMode);
+  const edgeRouterMode = isEdgeRouterMode(optRouterMode);
 
   const updateState = stateText => onChange({...configuratorOutput, stateText, certificateStage: 1});
 
@@ -209,43 +235,21 @@ key ${username}.key
     }
   };
 
-  const generateAdditionalConfig = () => {
-    // const tcpUdp = vpnParameters.optUseUDP ? 'udp': 'tcp';
-    // const redirectGateway = vpnParameters.optSendLANTrafficOnly ? '' : 'push “redirect-gateway def1”';
-
-    const configurableOptions =
-      [
-        `push "route ${vpnParameters.internalNetwork} 255.255.255.0"`,
-        // `push "dhcp-option DNS 8.8.8.8"`,
-        `dev tun`,
-        vpnParameters.optSendLANTrafficOnly ? '' : 'push "redirect-gateway def1"',        // option: redirect all l
-        `server ${vpnParameters.networkSegment} ${vpnParameters.subnetMask}`,
-        vpnParameters.vpnPort === 1194 ? '' : `port ${vpnParameters.vpnPort}`,
-        VPNParameters.optUseUDP ? 'proto udp' : 'proto tcp',
-        //'keepalive 10 120'
-      ].filter(o => o !== '').join('\n');
 
 
-    return `${configurableOptions}
-
-dh /tmp/openvpn/dh.pem
-ca /tmp/openvpn/ca.crt
-cert /tmp/openvpn/ca.crt
-key /tmp/openvpn/key.pem`
-  };
-
-
-  const generateIpTablesConfig = () => {
-    const cidrPrefix = subnetMaskToCidrPrefix(vpnParameters.subnetMask);
-    const vnpCidr = `${vpnParameters.networkSegment}/${cidrPrefix}`;
-    return `iptables -I INPUT 1 -p tcp -dport 443 -j ACCEPT
-iptables -I FORWARD 1 -source  ${vnpCidr} -j ACCEPT
-iptables -I FORWARD -i br0 -o tun0 -j ACCEPT
-iptables -I FORWARD -i tun0 -o br0 -j ACCEPT
-iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
+  const runAutoConfig = async (configuratorOutput) => {
+    updateState('Auto configure using ssh settings');
+    try {
+      await autoConfigViaSSH(configuratorOutput, vpnParameters);
+      onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure done successfully`);
+    } catch (e) {
+      onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure failed : ${e.message}. Please do the configuration manually`);
+    } finally {
+    }
   };
 
   const generateConfigurations = async () => {
+    onConfiguratorStatusChange('sshAutoConfigureOutput', '');
 
     const buildCAMessage = !vpnParameters.optRegenerateCA ? 'Reusing existing CA' : 'Building CA';
     updateState(buildCAMessage);
@@ -261,12 +265,24 @@ iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
     updateState('Generating dh pem');
     const dhParamsPem = isDev ? staticDhPem: await generateDHParam();
 
-    const additionalConfig = generateAdditionalConfig();
-    const ipTablesConfig = generateIpTablesConfig();
+    const additionalConfig = generateAdditionalConfig(vpnParameters);
+    const ipTablesConfig = generateIpTablesConfig(vpnParameters);
+
+    // auto configuration
+    if (configuratorMode === 'ssh') {
+      await runAutoConfig(configuratorOutput, vpnParameters)
+    }
 
     // update final
     onChange(
       {
+        configuratorMode,
+        sshServer,
+        sshServerErrorText,
+        sshPort,
+        sshUsername,
+        sshPassword,
+
         caCertPem,
         caPrivateKeyPem,
         dhParamsPem,
@@ -284,6 +300,44 @@ iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
     showMessage(`Copied ${what} to clipboard.`)
   };
 
+  const changeSSHServer = (e, sshServer) => {
+    // this.handleChange('networkPublicIpOrDDNSAddressOfRouter', host);
+    onChange({...configuratorOutput, sshServer});
+    // pingAddress(sshServer);
+  };
+
+  const finishChangingSSHServer = () => {
+    pingAddress(sshServer);
+  };
+
+  const updateSSHServerErrorText = (sshServerErrorText) => {
+    onChange({...configuratorOutput, sshServerErrorText});
+  };
+
+  const pingAddress = _.debounce(host => {
+    if (host.trim() === '') {
+      updateSSHServerErrorText('This field is required');
+      return;
+    }
+
+    updateSSHServerErrorText(ADDRESS_BEING_CHECKED);
+    ping.sys.probe(host, isAlive => {
+      console.log('**** got ping result for host', host, '****isAlive', isAlive);
+      if (isAlive) {
+        updateSSHServerErrorText(ADDRESS_IS_REACHABLE);
+      } else {
+        if (host === sshServer) {
+          updateSSHServerErrorText(ADDRESS_NOT_REACHABLE);
+        } else {
+          console.log('host does not equal to latest ip. ignore.', host, sshServer);
+          if (sshServerErrorText === ADDRESS_BEING_CHECKED) {
+            updateSSHServerErrorText(undefined);
+          }
+        }
+      }
+    });
+  }, 1000);
+
   const textFieldRows = 6;
 
   return (
@@ -292,6 +346,73 @@ iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
         <CardHeader title={`Configurator Output`} />
         <CardText expandable={true}>
           <div style={{marginBottom: 10, position: 'relative'}}>
+
+            {edgeRouterMode && [
+            <RadioButtonGroup name="configuratorMode"
+                              valueSelected={configuratorMode}
+                              onChange={(event, value) => onChange({...configuratorOutput, configuratorMode: value})}
+            >
+              <RadioButton label="Manually Configure" value="manual" disabled={certificateStage === 1} />
+              <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1} />
+            </RadioButtonGroup>,
+
+
+            <Table selectable={false} style={{tableLayout: 'auto'}}>
+              <TableBody displayRowCheckbox={false} showRowHover={false}>
+                {configuratorMode === 'ssh' && [
+                  renderTableRow("SSH server host or ip address",
+                    <TextField
+                      id="sshServer"
+                      value={sshServer}
+                      onChange={changeSSHServer}
+                      onBlur={finishChangingSSHServer}
+                      errorText={sshServerErrorText}
+                      errorStyle={sshServerErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
+                        sshServerErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} : undefined}
+                    />,
+                    {
+                      key: 'sshServer',
+                      // copyToClipboard: () => copyToClipboard(caCertPem, 'public server cert'),
+                      autoLabelWidth: true,
+                    }
+                  ),
+
+                  renderTableRow("SSH User name",
+                    <TextField
+                      id="sshUsername"
+                      value={sshUsername}
+                      onChange={(e, value) => onChange({...configuratorOutput, sshUsername: value})}
+                    />,
+                    {
+                      key: 'sshUsername',
+                      autoLabelWidth: true,
+                    }
+                  ),
+
+                  renderTableRow("SSH password",
+                    <TextField
+                      id="sshPassword"
+                      type="password"
+                      value={sshPassword}
+                      onChange={(e, value) => onChange({...configuratorOutput, sshPassword: value})}
+                    />,
+                    {
+                      key: 'sshPassword',
+                      autoLabelWidth: true,
+                    }
+                  ),
+                  <TableRow displayBorder={false}>
+                    <TableRowColumn colSpan={2}>
+                      {
+                        configuratorStatus.sshAutoConfigureOutput
+                      }
+                    </TableRowColumn>
+                  </TableRow>
+                ]
+                }
+              </TableBody>
+            </Table>]
+            }
             <RaisedButton
               label={stateText || 'Click me to run configurator'}
               primary={true}
@@ -395,8 +516,11 @@ iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
                     copyToClipboard: () => copyToClipboard(dhParamsPem, 'dh pem'),
                     autoLabelWidth: true,
                   }
-                ),
+                )
+              ]}
 
+              // dd-wrt only output
+              {certificateStage === 2 && ddWrtMode && [
                 renderTableRow("Add this to 'Additional Config'",
                   <TextField
                     id="additionalConfig"
@@ -424,8 +548,38 @@ iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
                     autoLabelWidth: true,
                   }
                 ),
-              ]
-              }
+              ]}
+
+              // edge router only output
+              {certificateStage === 2 && edgeRouterMode && [
+                renderTableRow("SSH into the router, and add these lines to configure openvpn server",
+                  <TextField
+                    id="additionalConfig"
+                    value={additionalConfig}
+                    multiLine={true}
+                    fullWidth={true}
+                  />,
+                  {
+                    key: 'additionalConfig',
+                    copyToClipboard: () => copyToClipboard(additionalConfig, 'additional config'),
+                    autoLabelWidth: true,
+                  }
+                ),
+
+                renderTableRow("SSH into the router, and add these lines to configure iptables",
+                  <TextField
+                    id="ipTablesConfig"
+                    value={ipTablesConfig}
+                    multiLine={true}
+                    fullWidth={true}
+                  />,
+                  {
+                    key: 'iptableConfig',
+                    copyToClipboard: () => copyToClipboard(ipTablesConfig, 'iptables config'),
+                    autoLabelWidth: true,
+                  }
+                ),
+              ]}
 
             </TableBody>
           </Table>

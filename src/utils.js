@@ -156,3 +156,7 @@ export const subnetMaskToCidrPrefix = mask => {
   }
   return cidrPrefix;
 };
+
+export const ADDRESS_BEING_CHECKED = 'Checking if address is reachable ...';
+export const ADDRESS_IS_REACHABLE = 'Address is reachable';
+export const ADDRESS_NOT_REACHABLE = "This address doesn't respond to ping. Are you sure it's right?";
