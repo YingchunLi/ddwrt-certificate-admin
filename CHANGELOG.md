@@ -15,8 +15,12 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 
 ## [Unreleased]
-## [2.0.0] - 2019-02-27
+## [1.1.1] - 2019-03-01
 ### Changed
+- Fixed windows executable got blank page issue 
+
+## [1.1.0] - 2019-02-27
+### Added 
 - Add 'EdgeRouter' mode
 - Add auto-configurate option for EdgeRouter which:
   * ssh to the router
