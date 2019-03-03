@@ -12,7 +12,6 @@ import {renderTableRow, renderTextFieldTableRow, subnetMaskToCidrPrefix} from '.
 import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
-import VPNParameters from "./VPNParameters";
 
 // electron api
 import {fs, executableDir, isDev, clipboard, ping} from './environment';
@@ -21,7 +20,7 @@ import {RadioButton, RadioButtonGroup} from "material-ui/RadioButton";
 import _ from "lodash";
 
 import {autoConfigViaSSH} from './ssh-utils';
-import {isDdWrtMode, isEdgeRouterMode, generateAdditionalConfig, generateIpTablesConfig} from "./vpn-utils";
+import {isDdWrtMode, isEdgeRouterMode, generateClientConfigs, generateAdditionalConfig, generateIpTablesConfig} from "./vpn-utils";
 
 
 const ConfiguratorOutput = (
@@ -174,68 +173,6 @@ key ${username}.key
     }
   };
 
-  const generateClientConfigs = async (caCert, caPrivateKey) => {
-    // create client key pair
-    if (clientOptions && clientOptions.length > 0) {
-      console.log('generating client certificates');
-
-      let date = new Date();
-      if (isDev) {
-        date.setDate(date.getDate() - 1);
-      }
-
-      const destDir = vpnParameters.userKeysDir ||executableDir;
-      for (let i = 0; i < clientOptions.length; ++i) {
-        const client = clientOptions[i];
-        const username = client.username;
-        const clientCertOptions =
-          {
-            commonName: username,
-            keySize: vpnParameters.keySize,
-            password: client.password,
-          };
-        updateState(`Generating certificates for client ${i+1}`);
-        console.log(`Generating certificates for client ${i+1}`);
-
-        const {certPem: clientCertPem, privateKeyPem: clientPrivateKeyPem} =
-          await buildClientCertificate(caCert, caPrivateKey, {...clientCertOptions, validityStart: date});
-
-        // generate client opvn file
-        const clientOvpn=`client
-remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
-port ${vpnParameters.vpnPort}
-dev tun
-#secret ${username}.key
-proto tcp
-
-comp-lzo
-route-gateway ${vpnParameters.routerInternalIP} 
-float
-
-ca ca.crt
-cert ${username}.crt
-key ${username}.key
-`;
-
-        const clientDestDir = `${destDir}/${username}`;
-        // const stat = fs.statSync(clientDestDir);
-        // if (stat.isDirectory()) {
-        //   fs.rmdirSync(clientDestDir);
-        // }
-
-        if (!fs.existsSync(clientDestDir)) {
-          console.log(`making dir [${clientDestDir}]`);
-          fs.mkdirSync(clientDestDir);
-        }
-        fs.writeFileSync(`${clientDestDir}/${username}.crt`, clientCertPem);
-        fs.writeFileSync(`${clientDestDir}/${username}.key`, clientPrivateKeyPem);
-        fs.writeFileSync(`${clientDestDir}/${username}.ovpn`, clientOvpn);
-
-      }
-    }
-  };
-
-
 
   const runAutoConfig = async (configuratorOutput) => {
     updateState('Auto configure using ssh settings');
@@ -260,7 +197,7 @@ key ${username}.key
     await generateServerConfigs(caCert, caPrivateKey);
 
     updateState('Generating client certificates');
-    await generateClientConfigs(caCert, caPrivateKey);
+    await generateClientConfigs(caCert, caPrivateKey, vpnParameters, clientOptions, updateState);
 
     updateState('Generating dh pem');
     const dhParamsPem = isDev ? staticDhPem: await generateDHParam();

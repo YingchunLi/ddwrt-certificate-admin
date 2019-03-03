@@ -1,11 +1,116 @@
 import {getVpnCommands} from './ssh-utils';
 import {subnetMaskToCidrPrefix} from "./utils";
+import {executableDir, fs, isDev} from "./environment";
+import {buildClientCertificate} from "./certificate-utils";
 
 export const isDdWrtMode = routerMode => routerMode === 'DD-WRT';
 export const isEdgeRouterMode = routerMode => routerMode === 'EDGE-SERVER';
 
 
+
+/************* client configurations ***********/
+export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters, clientOptions, updateState) => {
+  // create client key pair
+  if (clientOptions && clientOptions.length > 0) {
+    console.log('generating client certificates');
+
+    let date = new Date();
+    if (isDev) {
+      date.setDate(date.getDate() - 1);
+    }
+
+    const destDir = vpnParameters.userKeysDir ||executableDir;
+    for (let i = 0; i < clientOptions.length; ++i) {
+      const client = clientOptions[i];
+      const username = client.username;
+      const clientCertOptions =
+        {
+          commonName: username,
+          keySize: vpnParameters.keySize,
+          password: client.password,
+        };
+      updateState(`Generating certificates for client ${i+1}`);
+      console.log(`Generating certificates for client ${i+1}`);
+
+      const {certPem: clientCertPem, privateKeyPem: clientPrivateKeyPem} =
+        await buildClientCertificate(caCert, caPrivateKey, {...clientCertOptions, validityStart: date});
+
+      // generate client opvn file
+      const clientOvpn = generateClientOvpn(vpnParameters, username);
+
+      const clientDestDir = `${destDir}/${username}`;
+      // const stat = fs.statSync(clientDestDir);
+      // if (stat.isDirectory()) {
+      //   fs.rmdirSync(clientDestDir);
+      // }
+
+      if (!fs.existsSync(clientDestDir)) {
+        console.log(`making dir [${clientDestDir}]`);
+        fs.mkdirSync(clientDestDir);
+      }
+      fs.writeFileSync(`${clientDestDir}/${username}.crt`, clientCertPem);
+      fs.writeFileSync(`${clientDestDir}/${username}.key`, clientPrivateKeyPem);
+      fs.writeFileSync(`${clientDestDir}/${username}.ovpn`, clientOvpn);
+
+    }
+  }
+};
+
+const generateClientOvpn = (vpnParameters, username) => {
+  if (isDdWrtMode(vpnParameters.optRouterMode)) {
+    return generateClientOvpnForDDWRT(vpnParameters, username)
+  } else if (isEdgeRouterMode(vpnParameters.optRouterMode)) {
+    return generateClientOvpnForEdgeRouter(vpnParameters, username);
+  }
+};
+
+const generateClientOvpnForDDWRT = (vpnParameters, username) => {
+  return `client
+remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
+port ${vpnParameters.vpnPort}
+dev tun
+#secret ${username}.key
+proto tcp
+
+comp-lzo
+route-gateway ${vpnParameters.routerInternalIP} 
+float
+
+ca ca.crt
+cert ${username}.crt
+key ${username}.key
+`;
+};
+
+const generateClientOvpnForEdgeRouter = (vpnParameters, username) => {
+  return `client
+remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
+port ${vpnParameters.vpnPort}
+dev tun
+proto udp
+
+float
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+verb 3
+
+ca ca.crt
+cert ${username}.crt
+key ${username}.key
+`
+};
+
+
 /************* open vpn server settings *********/
+export const generateAdditionalConfig = (vpnParameters) => {
+  if (isDdWrtMode(vpnParameters.optRouterMode)) {
+    return generateVPNServerConfigForDDWRT(vpnParameters)
+  } else if (isEdgeRouterMode(vpnParameters.optRouterMode)) {
+    return generateVPNServerConfigForEdgeRouter(vpnParameters);
+  }
+};
 
 const generateVPNServerConfigForDDWRT = (vpnParameters) => {
   // const tcpUdp = vpnParameters.optUseUDP ? 'udp': 'tcp';
@@ -54,14 +159,6 @@ set interfaces openvpn vtun0 tls ca-cert-file ${configDir}/ca.crt
 set interfaces openvpn vtun0 tls cert-file ${configDir}/ca.crt
 set interfaces openvpn vtun0 tls key-file ${configDir}/ca.key
 set interfaces openvpn vtun0 tls dh-file ${configDir}/dh.pem`;
-};
-
-export const generateAdditionalConfig = (vpnParameters) => {
-  if (isDdWrtMode(vpnParameters.optRouterMode)) {
-    return generateVPNServerConfigForDDWRT(vpnParameters)
-  } else if (isEdgeRouterMode(vpnParameters.optRouterMode)) {
-    return generateVPNServerConfigForEdgeRouter(vpnParameters);
-  }
 };
 
 /************* firewall settings *********/

@@ -12,9 +12,15 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 - [x] option to send server keys to a folder
 - [x] uploaded server keys to edgeServer via ssh
 - [ ] generate credential files with random name, add "auth-user-pass $SOME_CREDENTIALS.txt" line
+- [x] generate correct client config files that can connect to server
 
 
 ## [Unreleased]
+
+## [1.1.2] - 2019-03-02
+### Changed
+- Set correct client ovpn file for edgeRouter
+
 ## [1.1.1] - 2019-03-01
 ### Changed
 - Fixed windows executable got blank page issue 
