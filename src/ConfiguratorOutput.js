@@ -8,7 +8,7 @@ import CircularProgress from 'material-ui/CircularProgress';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import {renderTableRow, renderTextFieldTableRow, subnetMaskToCidrPrefix} from './utils';
+import {renderTableRow} from './utils';
 import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
@@ -456,7 +456,7 @@ key ${username}.key
                 )
               ]}
 
-              // dd-wrt only output
+              {/* dd-wrt only output */}
               {certificateStage === 2 && ddWrtMode && [
                 renderTableRow("Add this to 'Additional Config'",
                   <TextField
@@ -487,7 +487,7 @@ key ${username}.key
                 ),
               ]}
 
-              // edge router only output
+              {/* edge router only output */}
               {certificateStage === 2 && edgeRouterMode && [
                 renderTableRow("SSH into the router, and add these lines to configure openvpn server",
                   <TextField

@@ -1,4 +1,3 @@
-import {getVpnCommands} from './ssh-utils';
 import {subnetMaskToCidrPrefix} from "./utils";
 import {executableDir, fs, isDev} from "./environment";
 import {buildClientCertificate} from "./certificate-utils";

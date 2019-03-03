@@ -25,7 +25,7 @@ class StepperApp extends Component {
       numberOfUsers: isDev ? 3 : 1,
       userKeysDir:  executableDir,
 
-      keySize:                1024,
+      keySize:                2048,
 
       networkPublicIpOrDDNSAddressOfRouter: publicAddress,
       vpnPort:                1194,
@@ -47,10 +47,10 @@ class StepperApp extends Component {
 
     configuratorOutput: {
       configuratorMode: 'manual',
-      sshServer:      '',
+      sshServer:      isDev ? publicAddress : '',
       sshServerErrorText: '',
       sshPort:        22,
-      sshUsername:    '',
+      sshUsername:    isDev ? 'ubnt': '',
       sshPassword:    '',
 
       caCertPem:       '',

@@ -3,9 +3,7 @@ const forge = require('node-forge');
 const pki = forge.pki;
 
 // dos2unix
-String.prototype.removeCarriageReturns = function (){
-  return this.replace(/\r\n/g, "\n");
-};
+const removeCarriageReturns = (source) => source.replace(/\r\n/g, "\n");
 
 // generate a keypair
 export const generateKeyPair = (keysize=2048, encryptWithPassword) => {
@@ -22,7 +20,7 @@ export const generateKeyPair = (keysize=2048, encryptWithPassword) => {
         let privateKeyPem = encryptWithPassword
           ? pki.encryptRsaPrivateKey(privateKey, encryptWithPassword)
           : pki.privateKeyToPem(privateKey);
-        privateKeyPem = privateKeyPem.removeCarriageReturns();
+        privateKeyPem = removeCarriageReturns(privateKeyPem);
         resolve({keys, privateKeyPem});
       }
     );
@@ -129,7 +127,7 @@ export const buildCA = async (options = {}) => {
   caCert.sign(caPrivateKey);
 
   // convert a Forge certificate to PEM
-  const caCertPem = pki.certificateToPem(caCert).removeCarriageReturns();
+  const caCertPem = removeCarriageReturns(pki.certificateToPem(caCert));
 
   return {caCert, caPrivateKey, caCertPem, caPrivateKeyPem};
 };

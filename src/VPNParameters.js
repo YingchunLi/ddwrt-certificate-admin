@@ -18,6 +18,7 @@ import {renderTableRow, renderTextFieldTableRow, renderRadioButtonGroup} from '.
 import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
 import {dialog, fs, ping, checkIfCAExists} from './environment';
+import {isEdgeRouterMode} from "./vpn-utils";
 
 const certificatePropertiesFields = [
   ['Country', 'countryName'],
@@ -144,6 +145,7 @@ class VPNParameters extends Component {
 
   render() {
     const {vpnParameters = {}} = this.props;
+    const edgeRouterMode = isEdgeRouterMode(vpnParameters.optRouterMode);
     const caExists = checkIfCAExists();
 
     const numberOfUsersElement =
@@ -232,17 +234,18 @@ class VPNParameters extends Component {
                 }
 
                 {
-                  renderTableRow('Generate a new CA, right?',
-                    renderRadioButtonGroup(['Yes, keep it extra secure', 'No, use the existing one'], [true, false],
-                      'optRegenerateCA', vpnParameters, this.handleChange, {option2Disabled: !caExists}))
+                  renderTableRow('Start with WAN Up, right?',
+                    renderRadioButtonGroup(['Yes', 'No, just on startup'], [true, false],
+                      'optStartWithWANUp', vpnParameters, this.handleChange,
+                      {option1Disabled: edgeRouterMode, option2Disabled: edgeRouterMode}),
+                    {'padding-bottom': '10px'}
+                  )
                 }
 
                 {
-                  renderTableRow('Start with WAN Up, right?',
-                    renderRadioButtonGroup(['Yes', 'No, just on startup'], [true, false],
-                      'optStartWithWANUp', vpnParameters, this.handleChange),
-                    {'padding-bottom': '10px'}
-                  )
+                  renderTableRow('Generate a new CA, right?',
+                    renderRadioButtonGroup(['Yes, keep it extra secure', 'No, use the existing one'], [true, false],
+                      'optRegenerateCA', vpnParameters, this.handleChange, {option2Disabled: !caExists}))
                 }
 
                 {
