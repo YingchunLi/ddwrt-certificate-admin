@@ -20,7 +20,7 @@ import {RadioButton, RadioButtonGroup} from "material-ui/RadioButton";
 import _ from "lodash";
 
 import {autoConfigViaSSH} from './ssh-utils';
-import {isDdWrtMode, isEdgeRouterMode, generateClientConfigs, generateAdditionalConfig, generateIpTablesConfig} from "./vpn-utils";
+import {isDdWrtMode, isEdgeRouterMode, generateClientConfigs, generateAdditionalConfig, generateFireWallConfig} from "./vpn-utils";
 
 
 const ConfiguratorOutput = (
@@ -203,7 +203,7 @@ key ${username}.key
     const dhParamsPem = isDev ? staticDhPem: await generateDHParam();
 
     const additionalConfig = generateAdditionalConfig(vpnParameters);
-    const ipTablesConfig = generateIpTablesConfig(vpnParameters);
+    const ipTablesConfig = generateFireWallConfig(vpnParameters);
 
     // auto configuration
     if (configuratorMode === 'ssh') {

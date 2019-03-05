@@ -1,6 +1,6 @@
 import {node_ssh, fs} from "./environment";
 import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
-import {generateVPNServerConfigForEdgeRouter} from './vpn-utils';
+import {generateFireWallConfigForEdgeRouter, generateVPNServerConfigForEdgeRouter} from './vpn-utils';
 
 const ssh = new node_ssh();
 
@@ -70,6 +70,7 @@ const close = () => {
 
 // https://stackoverflow.com/questions/20907125/how-execute-multiple-commands-on-ssh2-using-nodejs
 const runCommands = async (commands) => {
+  console.log(commands);
   let localFilename, remoteFilename;
   let fileGenerated = false;
   let filePutToRemote = false;
@@ -119,6 +120,14 @@ const removeLocalCommandFile = localFilename => {
   fs.unlinkSync(localFilename);
 };
 
+const generateFireWallConfigCommands = vpnParameters => {
+  const fireWallCommandPrefix = '/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper';
+  const fireWallCommands = generateFireWallConfigForEdgeRouter(vpnParameters).split('\n');
+  return ['begin', ...fireWallCommands, 'commit', 'end']
+    .map(line => `${fireWallCommandPrefix} ${line}`)
+    .join('\n');
+};
+
 const getVpnCommands = vpnParameters => generateVPNServerConfigForEdgeRouter(vpnParameters);
 
 const generateCommands = (configs, vpnParameters, configDir) => {
@@ -148,9 +157,13 @@ export const autoConfigViaSSH = async (configs, vpnParameters, configDir='/confi
     connectionOpen = true;
 
     await putCertificateFilesToRemote();
-    const commands = generateCommands(configs, vpnParameters, configDir);
 
+    const commands = generateCommands(configs, vpnParameters, configDir);
     await runCommands(commands);
+
+    const fireWallCommands = generateFireWallConfigCommands(vpnParameters);
+    await runCommands(fireWallCommands);
+
   } catch (e) {
     if (!connectionOpen) {
       throw new Error("failed to open ssh connection: " + e.message);

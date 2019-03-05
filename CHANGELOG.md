@@ -17,6 +17,12 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Unreleased]
 
+## [1.2.0] - 2019-03-05
+### Changed
+- Automatically add openvpn firewall rule for edgeRouter (no checking for existing rule yet)
+- Default key size to 2048
+- 'Start with WAN Up' option to be moved to below 'Router Mode'; grey-out control if RM set to EdgeRouter.
+
 ## [1.1.2] - 2019-03-02
 ### Changed
 - Set correct client ovpn file for edgeRouter

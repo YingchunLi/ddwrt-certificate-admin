@@ -162,16 +162,16 @@ set interfaces openvpn vtun0 tls dh-file ${configDir}/dh.pem`;
 
 /************* firewall settings *********/
 
-export const generateIpTablesConfig = (vpnParameters) => {
+export const generateFireWallConfig = (vpnParameters) => {
   if (isDdWrtMode(vpnParameters.optRouterMode)) {
-    return generateIpTablesConfigForDDWRT(vpnParameters)
+    return generateFireWallConfigForDDWRT(vpnParameters)
   } else if (isEdgeRouterMode(vpnParameters.optRouterMode)) {
-    return generateIpTablesConfigForEdgeRouter(vpnParameters);
+    return generateFireWallConfigForEdgeRouter(vpnParameters);
   }
 };
 
 
-const generateIpTablesConfigForDDWRT = (vpnParameters) => {
+const generateFireWallConfigForDDWRT = (vpnParameters) => {
   const cidrPrefix = subnetMaskToCidrPrefix(vpnParameters.subnetMask);
   const vnpCidr = `${vpnParameters.networkSegment}/${cidrPrefix}`;
   return `iptables -I INPUT 1 -p tcp -dport 443 -j ACCEPT
@@ -181,9 +181,10 @@ iptables -I FORWARD -i tun0 -o br0 -j ACCEPT
 iptables -t nat -A POSTROUTING -s ${vnpCidr} -j MASQUERADE`;
 };
 
-const generateIpTablesConfigForEdgeRouter = (vpnParameters) => {
-  return `set firewall name WAN_LOCAL rule 30 action accept
-set firewall name WAN_LOCAL rule 30 description openvpn
-set firewall name WAN_LOCAL rule 30 destination port ${vpnParameters.vpnPort}
-set firewall name WAN_LOCAL rule 30 protocol udp`
+export const generateFireWallConfigForEdgeRouter = (vpnParameters) => {
+  const ruleOrder = "90";
+  return `set firewall name WAN_LOCAL rule ${ruleOrder} action accept
+set firewall name WAN_LOCAL rule ${ruleOrder} description openvpn
+set firewall name WAN_LOCAL rule ${ruleOrder}  destination port ${vpnParameters.vpnPort}
+set firewall name WAN_LOCAL rule ${ruleOrder}  protocol udp`
 };
