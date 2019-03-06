@@ -26,7 +26,7 @@ const certificatePropertiesFields = [
   ['City', 'localityName'],
   ['Organization', 'organizationName'],
   ['Email Address', 'email'],
-  ['Key CN', 'commonName'],
+  ['Key CN', 'commonName', {required: true}],
   ['Key Name', 'organizationalUnitName'],
   // ['PCKS11 Module Path', 'pcks11ModulePath'],
   // ['PCKS11 PIN', 'pcks11Pin'],
@@ -178,8 +178,12 @@ class VPNParameters extends Component {
             <Table>
               <TableBody displayRowCheckbox={false} showRowHover={true}>
                 {
-                  certificatePropertiesFields.map(field => renderTextFieldTableRow(field[0], field[1],
-                    vpnParameters, field.length === 2 ? this.handleChange : this.handleNumericChange))
+                  certificatePropertiesFields.map(field => {
+                    const [label, fieldName, options={}] = field;
+                    const {filedType} = options;
+                    const callback = filedType === 'number' ? this.handleNumericChange : this.handleChange;
+                    return renderTextFieldTableRow(label, fieldName, vpnParameters, callback, options);
+                  })
                 }
                 {
                   renderTableRow('Key Size', keySizeElement)
@@ -201,7 +205,7 @@ class VPNParameters extends Component {
                     <TextField id='networkPublicIpOrDDNSAddressOfRouter'
                                value={vpnParameters.networkPublicIpOrDDNSAddressOfRouter}
                                onChange={this.changePublicIpDDNS}
-                               errorText={this.state.publicIpErrorText}
+                               errorText={this.state.publicIpErrorText || (vpnParameters.networkPublicIpOrDDNSAddressOfRouter === '' && 'This Field is Required')}
                                errorStyle={this.state.publicIpErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
                                  this.state.publicIpErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} :
                                  undefined}
