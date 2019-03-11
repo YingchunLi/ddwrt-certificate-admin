@@ -106,7 +106,7 @@ class VPNParameters extends Component {
         if (host === this.props.vpnParameters.networkPublicIpOrDDNSAddressOfRouter) {
           this.setState({publicIpErrorText: ADDRESS_NOT_REACHABLE})
         } else {
-          console.log('host does not equal to latest ip. ignore.', host, this.props.vpnParameters.networkPublicIpOrDDNSAddressOfRouter)
+          console.log('host does not equal to latest ip. ignore.', host, this.props.vpnParameters.networkPublicIpOrDDNSAddressOfRouter);
           if (this.state.publicIpErrorText === ADDRESS_BEING_CHECKED) {
             this.setState((prevState) => prevState.publicIpErrorText === ADDRESS_BEING_CHECKED && {publicIpErrorText: undefined});
           }

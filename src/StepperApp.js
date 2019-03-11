@@ -165,6 +165,7 @@ class StepperApp extends Component {
         clientOptions={clientOptions}
         configuratorOutput={configuratorOutput}
         onChange={configuratorOutput => {console.log(configuratorOutput);this.setState({configuratorOutput})}}
+        onFieldChange={fieldStatus => {this.setState((prevState) => ({configuratorOutput: {...prevState.configuratorOutput, ...fieldStatus}}))}}
         configuratorStatus={configuratorStatus}
         onConfiguratorStatusChange={(key, value) => this.setState({configuratorStatus: {...configuratorStatus, [key]: value}})}
         showMessage={this.showMessage}

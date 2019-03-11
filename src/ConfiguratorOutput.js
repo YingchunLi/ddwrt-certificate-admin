@@ -30,6 +30,7 @@ const ConfiguratorOutput = (
     clientOptions,
     configuratorOutput,
     onChange = ()=>{},
+    onFieldChange,
     configuratorStatus,
     onConfiguratorStatusChange,
     showMessage
@@ -239,6 +240,7 @@ key ${username}.key
 
   const changeSSHServer = (e, sshServer) => {
     // this.handleChange('networkPublicIpOrDDNSAddressOfRouter', host);
+    // onFieldChange({sshServer});
     onChange({...configuratorOutput, sshServer});
     // pingAddress(sshServer);
   };
@@ -248,7 +250,7 @@ key ${username}.key
   };
 
   const updateSSHServerErrorText = (sshServerErrorText) => {
-    onChange({...configuratorOutput, sshServerErrorText});
+    onFieldChange({sshServerErrorText})
   };
 
   const pingAddress = _.debounce(host => {
