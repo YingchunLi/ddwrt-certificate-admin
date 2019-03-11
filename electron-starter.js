@@ -21,6 +21,8 @@ function createWindow () {
     if (fs.existsSync(reactPluginPath)) {
       console.log('adding React Developer Tools chrome extension');
       BrowserWindow.addDevToolsExtension(reactPluginPath);
+    } else {
+      console.log(reactPluginPath + " does not exist. cannot load the plugin")
     }
   }
 

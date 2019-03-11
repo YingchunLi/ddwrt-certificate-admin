@@ -205,7 +205,7 @@ class VPNParameters extends Component {
                     <TextField id='networkPublicIpOrDDNSAddressOfRouter'
                                value={vpnParameters.networkPublicIpOrDDNSAddressOfRouter}
                                onChange={this.changePublicIpDDNS}
-                               errorText={this.state.publicIpErrorText || (vpnParameters.networkPublicIpOrDDNSAddressOfRouter === '' && 'This Field is Required')}
+                               errorText={this.state.publicIpErrorText || (vpnParameters.networkPublicIpOrDDNSAddressOfRouter === '' && 'This field is required')}
                                errorStyle={this.state.publicIpErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
                                  this.state.publicIpErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} :
                                  undefined}

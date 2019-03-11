@@ -51,4 +51,4 @@ export const internalNetwork = privateAddress ? ip.mask(privateAddress, '255.255
 
 export const routerInternalIP = ip.or(internalNetwork, '0.0.0.1');
 
-export const publicAddress = publicAddresses.length > 0 ? publicAddresses[0].address : isDev ? '96.57.9.236' : '';
+export const publicAddress = publicAddresses.length > 0 ? publicAddresses[0].address :  '';

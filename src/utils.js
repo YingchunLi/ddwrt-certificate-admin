@@ -45,6 +45,18 @@ const styles = {
 
 };
 
+// field error texts
+export let errorTexts = {};
+
+const updateFieldErrorText = (fieldName, errorText) => {
+  if (!errorText) {
+    delete errorTexts[fieldName];
+  } else {
+    errorTexts[fieldName] = errorText;
+  }
+};
+
+
 // renders a table row
 export const renderTableRow = (label, component, options = {}) => {
   const {displayBorder = false, key, copyToClipboard, autoLabelWidth=false} = options;
@@ -102,6 +114,8 @@ export const renderTextFieldTableRow = (label, fieldName, object, onChange, opti
   const errorChecker = checker && checker(value);
 
   const errorText = errorRequired || errorPattern || errorChecker;
+  updateFieldErrorText(fieldName, errorText);
+
   const component = fieldComponent ||
     <TextField  id={fieldName}
                 type={filedType}
