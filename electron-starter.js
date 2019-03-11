@@ -17,7 +17,7 @@ const dialog = electron.dialog;
 function createWindow () {
   if (process.env.ELECTRON_START_URL)  {
     // comment this out or change it if you have it on a different location
-    const reactPluginPath = 'chromeExtensions/react_3.1.0_0';
+    const reactPluginPath = 'chromeExtensions/react_3.6.0_0';
     if (fs.existsSync(reactPluginPath)) {
       console.log('adding React Developer Tools chrome extension');
       BrowserWindow.addDevToolsExtension(reactPluginPath);
