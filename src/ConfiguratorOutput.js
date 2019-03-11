@@ -8,7 +8,7 @@ import CircularProgress from 'material-ui/CircularProgress';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import {renderTableRow} from './utils';
+import {renderTableRow, renderTextFieldTableRow} from './utils';
 import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
@@ -288,6 +288,7 @@ key ${username}.key
 
             {edgeRouterMode && [
             <RadioButtonGroup name="configuratorMode"
+                              key="configuratorMode"
                               valueSelected={configuratorMode}
                               onChange={(event, value) => onChange({...configuratorOutput, configuratorMode: value})}
             >
@@ -296,7 +297,7 @@ key ${username}.key
             </RadioButtonGroup>,
 
 
-            <Table selectable={false} style={{tableLayout: 'auto'}}>
+            <Table selectable={false} style={{tableLayout: 'auto'}} key="sshConfigurations">
               <TableBody displayRowCheckbox={false} showRowHover={false}>
                 {configuratorMode === 'ssh' && [
                   renderTableRow("SSH server host or ip address",
@@ -309,10 +310,19 @@ key ${username}.key
                       errorStyle={sshServerErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
                         sshServerErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} : undefined}
                     />,
+                    { key: 'sshServer', autoLabelWidth: true,
+                    }
+                  ),
+
+                  renderTextFieldTableRow('SSH port', 'sshPort', configuratorOutput,
+                    (fieldName, sshPort) => onFieldChange({sshPort}),
                     {
-                      key: 'sshServer',
-                      // copyToClipboard: () => copyToClipboard(caCertPem, 'public server cert'),
-                      autoLabelWidth: true,
+                      required: true,
+                      filedType: 'number',
+                      min: 1,
+                      max: 65535,
+                      hintText: 'Enter a value between 1 and 65535',
+                      validator: value => Number(value) >= 1 && Number(value) <= 65535
                     }
                   ),
 
@@ -340,7 +350,8 @@ key ${username}.key
                       autoLabelWidth: true,
                     }
                   ),
-                  <TableRow displayBorder={false}>
+
+                  <TableRow displayBorder={false} key="sshAutoConfigureOutput">
                     <TableRowColumn colSpan={2}>
                       {
                         configuratorStatus.sshAutoConfigureOutput
@@ -352,6 +363,7 @@ key ${username}.key
               </TableBody>
             </Table>]
             }
+
             <RaisedButton
               label={stateText || 'Click me to run configurator'}
               primary={true}
@@ -365,7 +377,7 @@ key ${username}.key
 
           <Table selectable={false} style={{tableLayout: 'auto'}}>
             <TableBody displayRowCheckbox={false} showRowHover={false}>
-              {certificateStage === 2 &&
+              {certificateStage === 2 && ddWrtMode &&
               <TableRow displayBorder={false}>
                 <TableRowColumn colSpan={2}>
                   Set "OpenVPN" to "ENABLE".
@@ -403,8 +415,9 @@ key ${username}.key
           </Table>
 
           <Table selectable={false} style={{tableLayout: 'auto'}}>
+            {/* dd-wrt only output */}
             <TableBody displayRowCheckbox={false} showRowHover={false}>
-              {certificateStage === 2 && [
+              {certificateStage === 2 && ddWrtMode && [
                 renderTableRow("Set 'Public Server Cert' to",
                   <TextField
                     id="caCertPem"

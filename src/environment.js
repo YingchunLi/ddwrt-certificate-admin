@@ -47,7 +47,7 @@ console.log('****publicAddresses', publicAddresses);
 console.log('****privateAddresses', privateAddresses);
 
 const privateAddress = privateAddresses.length > 0 && privateAddresses[0].address;
-export const internalNetwork = privateAddress ? ip.mask(privateAddress, '255.255.255.0'): '192.168.1.0';
+export const internalNetwork = isDev ? (privateAddress ? ip.mask(privateAddress, '255.255.255.0'): '192.168.1.0') : '';
 
 export const routerInternalIP = ip.or(internalNetwork, '0.0.0.1');
 
