@@ -271,6 +271,12 @@ class VPNParameters extends Component {
                 }
 
                 {
+                  renderTableRow('Prepend client output filenames with external IP/DDNS name',
+                    renderRadioButtonGroup(['Yes', 'No'], [true, false],
+                      'optPrependClientOutputFileNameWithIPDDNSName', vpnParameters, this.handleChange))
+                }
+
+                {
                   renderTableRow('Number of users to generate', numberOfUsersElement)
                 }
 

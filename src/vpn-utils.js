@@ -47,9 +47,12 @@ export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters,
         console.log(`making dir [${clientDestDir}]`);
         fs.mkdirSync(clientDestDir);
       }
-      fs.writeFileSync(`${clientDestDir}/${username}.crt`, clientCertPem);
-      fs.writeFileSync(`${clientDestDir}/${username}.key`, clientPrivateKeyPem);
-      fs.writeFileSync(`${clientDestDir}/${username}.ovpn`, clientOvpn);
+
+      const clientFilenamePrefix = vpnParameters.optPrependClientOutputFileNameWithIPDDNSName ?
+        `${vpnParameters.networkPublicIpOrDDNSAddressOfRouter}-${username}` : username;
+      fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.crt`, clientCertPem);
+      fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.key`, clientPrivateKeyPem);
+      fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.ovpn`, clientOvpn);
 
     }
   }

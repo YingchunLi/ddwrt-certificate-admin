@@ -41,6 +41,7 @@ class StepperApp extends Component {
       optUseUDP:              true,
       optSendLANTrafficOnly:  true,
       optCertificateOnlyAuth: true,
+      optPrependClientOutputFileNameWithIPDDNSName: false,
     },
     // serverOptions: [{username: 'server1'}],
     clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
