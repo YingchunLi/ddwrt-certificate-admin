@@ -256,7 +256,8 @@ export const generateDHParams = () => {
 
       // convert to ASN.1, then DER, then PEM-encode
       const dhParamsAsn = asn1.toDer(dhParamsToAsn1(prime, generator));
-      const dhPem = forge.pem.encode({type: 'DH PARAMETERS', body: dhParamsAsn.getBytes()}, {maxline: 64});
+      let dhPem = forge.pem.encode({type: 'DH PARAMETERS', body: dhParamsAsn.getBytes()}, {maxline: 64});
+      dhPem = removeCarriageReturns(dhPem);
 
       resolve(dhPem);
     });
