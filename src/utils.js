@@ -114,7 +114,7 @@ export const renderTextFieldTableRow = (label, fieldName, object, onChange, opti
   const errorChecker = checker && checker(value);
 
   const errorText = errorRequired || errorPattern || errorChecker;
-  updateFieldErrorText(fieldName, errorText);
+  updateFieldErrorText(label, errorText);
 
   const component = fieldComponent ||
     <TextField  id={fieldName}
