@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {Card, CardHeader, CardText} from 'material-ui/Card';
 import { Table, TableRow, TableRowColumn, TableBody, } from 'material-ui/Table';
 
+import Checkbox from 'material-ui/Checkbox';
 import CircularProgress from 'material-ui/CircularProgress';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
@@ -52,6 +53,8 @@ const ConfiguratorOutput = (
 
     certificateStage,
     stateText,
+
+    ignoreConfigurationErrors
   }
     = configuratorOutput;
 
@@ -229,6 +232,8 @@ key ${username}.key
 
         certificateStage: 2,
         stateText: '',
+
+        ignoreConfigurationErrors,
       }
     );
   };
@@ -279,21 +284,20 @@ key ${username}.key
 
   const textFieldRows = 6;
 
-  return (
-    <div >
-      <Card initiallyExpanded={true}>
-        <CardHeader title={`Configurator Output`} />
-        <CardText expandable={true}>
-          <div style={{marginBottom: 10, position: 'relative'}}>
+  return <div>
+    <Card initiallyExpanded={true}>
+      <CardHeader title={`Configurator Output`}/>
+      <CardText expandable={true}>
+        <div style={{marginBottom: 10, position: 'relative'}}>
 
-            {edgeRouterMode && [
+          {edgeRouterMode && [
             <RadioButtonGroup name="configuratorMode"
                               key="configuratorMode"
                               valueSelected={configuratorMode}
                               onChange={(event, value) => onChange({...configuratorOutput, configuratorMode: value})}
             >
-              <RadioButton label="Manually Configure" value="manual" disabled={certificateStage === 1} />
-              <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1} />
+              <RadioButton label="Manually Configure" value="manual" disabled={certificateStage === 1}/>
+              <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1}/>
             </RadioButtonGroup>,
 
 
@@ -310,7 +314,8 @@ key ${username}.key
                       errorStyle={sshServerErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
                         sshServerErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} : undefined}
                     />,
-                    { key: 'sshServer', autoLabelWidth: true,
+                    {
+                      key: 'sshServer', autoLabelWidth: true,
                     }
                   ),
 
@@ -362,184 +367,212 @@ key ${username}.key
                 }
               </TableBody>
             </Table>]
-            }
+          }
 
-            <RaisedButton
-              label={stateText || 'Click me to run configurator'}
-              primary={true}
-              onClick={generateConfigurations}
-              disabled={certificateStage === 1}
-            />
-          </div>
+          <RaisedButton
+            label={stateText || 'Click me to run configurator'}
+            primary={true}
+            onClick={generateConfigurations}
+            disabled={certificateStage === 1 || (!_.isEmpty(errorTexts) && !ignoreConfigurationErrors)}
+          />
+        </div>
 
-          {/*{stateText}*/}
-          {certificateStage === 1 && <CircularProgress />}
+        {/*{stateText}*/}
+        {certificateStage === 1 && <CircularProgress/>}
 
+        {
+          !_.isEmpty(errorTexts) &&
           <Table selectable={false} style={{tableLayout: 'auto'}}>
             <TableBody displayRowCheckbox={false} showRowHover={false}>
-              {certificateStage === 2 && ddWrtMode &&
-              <TableRow displayBorder={false}>
+              <TableRow key="header" displayBorder={false}>
                 <TableRowColumn colSpan={2}>
-                  Set "OpenVPN" to "ENABLE".
-                  <br/>
-                  {`Set "Start Type" to "${vpnParameters.optStartWithWANUp ? 'WAN Up' : 'Server Up'}".`}
-                  <br/>
-                  <br/>
-
-                  Set "Config as" to "SERVER".
-                  <br/>
-                  Set "Server Mode" to "ROUTER (TUN)".
-                  <br/>
-                  <br/>
-
-                  {`Set "Network" to "${vpnParameters.networkSegment}".`}
-                  <br/>
-                  {`Set "Netmask" to "${vpnParameters.subnetMask}".`}
-                  <br/>
-                  <br/>
-
-                  {`Set "Port" to "${vpnParameters.vpnPort}".`}
-                  <br/>
-                  {`Set "Tunnel Protocol" to "${vpnParameters.optUseUDP ? 'UDP' : 'TCP'}".`}
-                  <br/>
-                  <br/>
-
-                  Set "Encryption Cypher" to "BLOWFISH CBC".
-                  <br/>
-                  Set "Hash Algorithm" to "SHA1".
-                  <br/>
+                  There are some errors with the configuration parameters. Please correct them before proceeding.
                 </TableRowColumn>
               </TableRow>
-              }
+              <TableRow key="errors" displayBorder={false}>
+                <TableRowColumn colSpan={2} style={{color: 'red'}}>
+                  {
+                    _.map(errorTexts, (errorText, field) => [`${field}: ${errorText}`, <br/>])
+                  }
+                </TableRowColumn>
+              </TableRow>
+              <TableRow key="confirmOverride" displayBorder={false}>>
+                <TableRowColumn colSpan={2}>
+                  <Checkbox
+                    label="Override errors, even though the resulting files probably won't work"
+                    onCheck={(event, isInputChecked) => onFieldChange({ignoreConfigurationErrors: isInputChecked})}
+                  />
+                </TableRowColumn>
+              </TableRow>
             </TableBody>
           </Table>
+        }
 
-          <Table selectable={false} style={{tableLayout: 'auto'}}>
+
+        <Table selectable={false} style={{tableLayout: 'auto'}}>
+          <TableBody displayRowCheckbox={false} showRowHover={false}>
+            {certificateStage === 2 && ddWrtMode &&
+            <TableRow displayBorder={false}>
+              <TableRowColumn colSpan={2}>
+                Set "OpenVPN" to "ENABLE".
+                <br/>
+                {`Set "Start Type" to "${vpnParameters.optStartWithWANUp ? 'WAN Up' : 'Server Up'}".`}
+                <br/>
+                <br/>
+
+                Set "Config as" to "SERVER".
+                <br/>
+                Set "Server Mode" to "ROUTER (TUN)".
+                <br/>
+                <br/>
+
+                {`Set "Network" to "${vpnParameters.networkSegment}".`}
+                <br/>
+                {`Set "Netmask" to "${vpnParameters.subnetMask}".`}
+                <br/>
+                <br/>
+
+                {`Set "Port" to "${vpnParameters.vpnPort}".`}
+                <br/>
+                {`Set "Tunnel Protocol" to "${vpnParameters.optUseUDP ? 'UDP' : 'TCP'}".`}
+                <br/>
+                <br/>
+
+                Set "Encryption Cypher" to "BLOWFISH CBC".
+                <br/>
+                Set "Hash Algorithm" to "SHA1".
+                <br/>
+              </TableRowColumn>
+            </TableRow>
+            }
+          </TableBody>
+        </Table>
+
+        <Table selectable={false} style={{tableLayout: 'auto'}}>
+          {/* dd-wrt only output */}
+          <TableBody displayRowCheckbox={false} showRowHover={false}>
+            {certificateStage === 2 && ddWrtMode && [
+              renderTableRow("Set 'Public Server Cert' to",
+                <TextField
+                  id="caCertPem"
+                  value={caCertPem}
+                  multiLine={true}
+                  // rows={3}
+                  rowsMax={textFieldRows}
+                  fullWidth={true}
+                  disabled={true}
+                />,
+                {
+                  key: 'caCertPem',
+                  copyToClipboard: () => copyToClipboard(caCertPem, 'public server cert'),
+                  autoLabelWidth: true,
+                }
+              ),
+
+
+              renderTableRow("Set 'Private Server Key' to",
+                <TextField
+                  id="caPrivateKeyPem"
+                  value={caPrivateKeyPem}
+                  multiLine={true}
+                  // rows={8}
+                  rowsMax={textFieldRows}
+                  fullWidth={true}
+                  disabled={true}
+                />,
+                {
+                  key: 'caPrivateKeyPem',
+                  copyToClipboard: () => copyToClipboard(caPrivateKeyPem, 'private server key'),
+                  autoLabelWidth: true,
+                }
+              ),
+
+              renderTableRow("Set 'DH PEM'",
+                <TextField
+                  id="dhParamsPem"
+                  value={dhParamsPem}
+                  multiLine={true}
+                  // rows={8}
+                  rowsMax={textFieldRows}
+                  fullWidth={true}
+                  disabled={true}
+                />,
+                {
+                  key: 'dhParamsPem',
+                  copyToClipboard: () => copyToClipboard(dhParamsPem, 'dh pem'),
+                  autoLabelWidth: true,
+                }
+              )
+            ]}
+
             {/* dd-wrt only output */}
-            <TableBody displayRowCheckbox={false} showRowHover={false}>
-              {certificateStage === 2 && ddWrtMode && [
-                renderTableRow("Set 'Public Server Cert' to",
-                  <TextField
-                    id="caCertPem"
-                    value={caCertPem}
-                    multiLine={true}
-                    // rows={3}
-                    rowsMax={textFieldRows}
-                    fullWidth={true}
-                    disabled={true}
-                  />,
-                  {
-                    key: 'caCertPem',
-                    copyToClipboard: () => copyToClipboard(caCertPem, 'public server cert'),
-                    autoLabelWidth: true,
-                  }
-                ),
+            {certificateStage === 2 && ddWrtMode && [
+              renderTableRow("Add this to 'Additional Config'",
+                <TextField
+                  id="additionalConfig"
+                  value={additionalConfig}
+                  multiLine={true}
+                  fullWidth={true}
+                />,
+                {
+                  key: 'additionalConfig',
+                  copyToClipboard: () => copyToClipboard(additionalConfig, 'additional config'),
+                  autoLabelWidth: true,
+                }
+              ),
 
+              renderTableRow("SSH into the router, and add these lines to configure iptables",
+                <TextField
+                  id="ipTablesConfig"
+                  value={ipTablesConfig}
+                  multiLine={true}
+                  fullWidth={true}
+                />,
+                {
+                  key: 'iptableConfig',
+                  copyToClipboard: () => copyToClipboard(ipTablesConfig, 'iptables config'),
+                  autoLabelWidth: true,
+                }
+              ),
+            ]}
 
-                renderTableRow("Set 'Private Server Key' to",
-                  <TextField
-                    id="caPrivateKeyPem"
-                    value={caPrivateKeyPem}
-                    multiLine={true}
-                    // rows={8}
-                    rowsMax={textFieldRows}
-                    fullWidth={true}
-                    disabled={true}
-                  />,
-                  {
-                    key: 'caPrivateKeyPem',
-                    copyToClipboard: () => copyToClipboard(caPrivateKeyPem, 'private server key'),
-                    autoLabelWidth: true,
-                  }
-                ),
+            {/* edge router only output */}
+            {certificateStage === 2 && edgeRouterMode && [
+              renderTableRow("SSH into the router, and add these lines to configure openvpn server",
+                <TextField
+                  id="additionalConfig"
+                  value={additionalConfig}
+                  multiLine={true}
+                  fullWidth={true}
+                />,
+                {
+                  key: 'additionalConfig',
+                  copyToClipboard: () => copyToClipboard(additionalConfig, 'additional config'),
+                  autoLabelWidth: true,
+                }
+              ),
 
-                renderTableRow("Set 'DH PEM'",
-                  <TextField
-                    id="dhParamsPem"
-                    value={dhParamsPem}
-                    multiLine={true}
-                    // rows={8}
-                    rowsMax={textFieldRows}
-                    fullWidth={true}
-                    disabled={true}
-                  />,
-                  {
-                    key: 'dhParamsPem',
-                    copyToClipboard: () => copyToClipboard(dhParamsPem, 'dh pem'),
-                    autoLabelWidth: true,
-                  }
-                )
-              ]}
+              renderTableRow("SSH into the router, and add these lines to configure iptables",
+                <TextField
+                  id="ipTablesConfig"
+                  value={ipTablesConfig}
+                  multiLine={true}
+                  fullWidth={true}
+                />,
+                {
+                  key: 'iptableConfig',
+                  copyToClipboard: () => copyToClipboard(ipTablesConfig, 'iptables config'),
+                  autoLabelWidth: true,
+                }
+              ),
+            ]}
 
-              {/* dd-wrt only output */}
-              {certificateStage === 2 && ddWrtMode && [
-                renderTableRow("Add this to 'Additional Config'",
-                  <TextField
-                    id="additionalConfig"
-                    value={additionalConfig}
-                    multiLine={true}
-                    fullWidth={true}
-                  />,
-                  {
-                    key: 'additionalConfig',
-                    copyToClipboard: () => copyToClipboard(additionalConfig, 'additional config'),
-                    autoLabelWidth: true,
-                  }
-                ),
+          </TableBody>
+        </Table>
 
-                renderTableRow("SSH into the router, and add these lines to configure iptables",
-                  <TextField
-                    id="ipTablesConfig"
-                    value={ipTablesConfig}
-                    multiLine={true}
-                    fullWidth={true}
-                  />,
-                  {
-                    key: 'iptableConfig',
-                    copyToClipboard: () => copyToClipboard(ipTablesConfig, 'iptables config'),
-                    autoLabelWidth: true,
-                  }
-                ),
-              ]}
-
-              {/* edge router only output */}
-              {certificateStage === 2 && edgeRouterMode && [
-                renderTableRow("SSH into the router, and add these lines to configure openvpn server",
-                  <TextField
-                    id="additionalConfig"
-                    value={additionalConfig}
-                    multiLine={true}
-                    fullWidth={true}
-                  />,
-                  {
-                    key: 'additionalConfig',
-                    copyToClipboard: () => copyToClipboard(additionalConfig, 'additional config'),
-                    autoLabelWidth: true,
-                  }
-                ),
-
-                renderTableRow("SSH into the router, and add these lines to configure iptables",
-                  <TextField
-                    id="ipTablesConfig"
-                    value={ipTablesConfig}
-                    multiLine={true}
-                    fullWidth={true}
-                  />,
-                  {
-                    key: 'iptableConfig',
-                    copyToClipboard: () => copyToClipboard(ipTablesConfig, 'iptables config'),
-                    autoLabelWidth: true,
-                  }
-                ),
-              ]}
-
-            </TableBody>
-          </Table>
-
-        </CardText>
-      </Card>
-    </div>
-  );
+      </CardText>
+    </Card>
+  </div>;
 };
 
 ConfiguratorOutput.propTypes = {

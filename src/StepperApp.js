@@ -61,6 +61,8 @@ class StepperApp extends Component {
       ipTablesConfig: '',
       certificateStage: 0,
       stateText: '',
+
+      ignoreConfigurationErrors: false,
     },
 
     configuratorStatus : {
