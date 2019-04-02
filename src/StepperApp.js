@@ -35,7 +35,7 @@ class StepperApp extends Component {
       subnetMask:             '255.255.255.0',
 
       // other options
-      optRouterMode:          'DD-WRT',
+      optRouterMode:          'EDGE-SERVER',
       optRegenerateCA:        !(isDev && caExists),
       optStartWithWANUp:      true,
       optUseUDP:              true,

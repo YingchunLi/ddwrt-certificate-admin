@@ -15,9 +15,11 @@ import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
 
 // electron api
-import {fs, executableDir, isDev, clipboard, ping} from './environment';
+import {shell, fs, executableDir, isDev, clipboard, ping} from './environment';
 import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
 import {RadioButton, RadioButtonGroup} from "material-ui/RadioButton";
+import FlatButton from 'material-ui/FlatButton';
+
 import _ from "lodash";
 
 import {autoConfigViaSSH} from './ssh-utils';
@@ -538,6 +540,27 @@ key ${username}.key
 
             {/* edge router only output */}
             {certificateStage === 2 && edgeRouterMode && [
+              <TableRow displayBorder={false} key="selectKey">
+                <TableRowColumn>
+                  <label>Upload your certificate files to the router.<br />
+                  If you're using Filezilla, set the QuickConnect to:<br />
+                  Server: xxx <br />
+                  Username: (your username;<strong>'ubnt'</strong> by default)<br />
+                  Password: (your password;<strong>'ubnt'</strong> by default)<br />
+                  Port: <strong>22</strong> (unless you changed it)
+                  </label>
+                </TableRowColumn>
+                <TableRowColumn style={{}}>
+                  <div>
+                    Files are here: <FlatButton key="browseCertificateFilesFolder" label="Browse" primary={true} onClick={e => shell.openItem(executableDir)} />
+                  </div>
+
+                  <br/>
+
+                  upload: <strong>ca.crt</strong>, <strong>ca.key</strong>, and <strong>dh.pem</strong> to <strong>/config/auth</strong>
+                </TableRowColumn>
+              </TableRow>,
+
               renderTableRow("SSH into the router, and add these lines to configure openvpn server",
                 <TextField
                   id="additionalConfig"
