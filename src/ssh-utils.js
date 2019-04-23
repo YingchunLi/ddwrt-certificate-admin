@@ -134,12 +134,9 @@ const generateCommands = (configs, vpnParameters, configDir) => {
   const vpnCommands = getVpnCommands(vpnParameters);
   const commands = `
  source /opt/vyatta/etc/functions/script-template   
- configure
  
  ${vpnCommands}
  
- commit
- save
   `;
   return commands;
 };

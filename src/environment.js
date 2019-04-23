@@ -4,7 +4,7 @@ import ip from "ip";
 const electron = window.require('electron');
 export const remote = electron.remote;
 export const clipboard = electron.clipboard;
-export const dialog = electron.dialog;
+export const dialog = remote.dialog;
 export const shell = electron.shell;
 
 // normal import won't work for electron app, so special process here

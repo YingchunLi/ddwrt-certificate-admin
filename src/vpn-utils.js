@@ -152,7 +152,9 @@ export const generateVPNServerConfigForEdgeRouter = (vpnParameters, configDir='/
   const cidrPrefix = subnetMaskToCidrPrefix(subnetMask);
   const vnpCidr = `${networkSegment}/${cidrPrefix}`;
 
-  return `set interfaces openvpn vtun0 mode server
+  return `configure
+
+set interfaces openvpn vtun0 mode server
 set interfaces openvpn vtun0 server subnet ${vnpCidr} 
 set interfaces openvpn vtun0 server push-route ${internalNetwork}/24
 set interfaces openvpn vtun0 server name-server ${routerInternalIP}
@@ -160,7 +162,10 @@ set interfaces openvpn vtun0 server name-server ${routerInternalIP}
 set interfaces openvpn vtun0 tls ca-cert-file ${configDir}/ca.crt
 set interfaces openvpn vtun0 tls cert-file ${configDir}/ca.crt
 set interfaces openvpn vtun0 tls key-file ${configDir}/ca.key
-set interfaces openvpn vtun0 tls dh-file ${configDir}/dh.pem`;
+set interfaces openvpn vtun0 tls dh-file ${configDir}/dh.pem
+
+commit
+save`;
 };
 
 /************* firewall settings *********/
