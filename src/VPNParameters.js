@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import _ from 'lodash';
 import update from 'immutability-helper';
 
+// material UI
 import {Card, CardHeader, CardText} from 'material-ui/Card';
 import FlatButton from 'material-ui/FlatButton';
 import {
@@ -21,13 +22,13 @@ import {dialog, fs, ping, checkIfCAExists} from './environment';
 import {isEdgeRouterMode} from "./vpn-utils";
 
 const certificatePropertiesFields = [
-  ['Country', 'countryName'],
-  ['Province', 'stateOrProvinceName'],
-  ['City', 'localityName'],
-  ['Organization', 'organizationName'],
-  ['Email Address', 'email'],
-  ['Key CN', 'commonName', {required: true}],
-  ['Key Name', 'organizationalUnitName'],
+  ['Country', 'countryName', {tooltip: <div>The country the router is located in.<br/>e.g. 'United States'</div>, tooltipPosition: 'bottom-right'}],
+  ['Province', 'stateOrProvinceName', {tooltip: <div>The province or state the router is located in. <br/> e.g. 'Alberta' or 'Alabama'</div>,}],
+  ['City', 'localityName', {tooltip: <div>The town or city the router is located in. <br/> e.g. 'London' or 'Sacramento'</div>,}],
+  ['Organization', 'organizationName', {tooltip: <div>The organization who owns the router. <br/> If it's personal, put whatever you'd like.</div>}],
+  ['Email Address', 'email', {tooltip: "Your e-mail address."}],
+  ['Key CN', 'commonName', {required: true, tooltip: <div>The dns or dynamic dns name assigned to this router, for which cert will be issued. <br/> e.g. ubnt.com; should match the first field of Network Properties section.</div>}],
+  ['Key Name', 'organizationalUnitName', {tooltip: <div>If you're not sure what to put here, just put the same thing as the box above.</div>}],
   // ['PCKS11 Module Path', 'pcks11ModulePath'],
   // ['PCKS11 PIN', 'pcks11Pin'],
   // ['Key Size', 'keySize', true]

@@ -3,6 +3,7 @@ import React from 'react';
 
 import IconButton from 'material-ui/IconButton';
 import DescriptionIcon from 'material-ui/svg-icons/action/description';
+import TooltipIcon from 'material-ui/svg-icons/action/info';
 
 import {
   TableRow,
@@ -19,6 +20,8 @@ const styles = {
     // width: '30%',
     // maxWidth: 350,
     // wordWrap: 'break-word',
+    overflow: 'visible',
+    whiteSpace: 'normal',
   },
 
   element: {
@@ -59,7 +62,7 @@ const updateFieldErrorText = (fieldName, errorText) => {
 
 // renders a table row
 export const renderTableRow = (label, component, options = {}) => {
-  const {displayBorder = false, key, copyToClipboard, autoLabelWidth=false} = options;
+  const {displayBorder = false, key, copyToClipboard, autoLabelWidth=false, tooltip, tooltipPosition='bottom-right'} = options;
   const elementStyle = autoLabelWidth ? {width: '100%'} : styles.element;
   return (
     <TableRow displayBorder={displayBorder} key={key}>
@@ -103,6 +106,8 @@ export const renderTextFieldTableRow = (label, fieldName, object, onChange, opti
     displayBorder = false,
     fieldComponent,
     checker,
+    tooltip,
+    tooltipPosition = "top-right",
   } = options;
   const numericAttributes = filedType === 'number' ? {min, max} : {};
   // const value = _.get(object, fieldName, '');
@@ -126,9 +131,17 @@ export const renderTextFieldTableRow = (label, fieldName, object, onChange, opti
                 hintText={hintText}
                 errorText={errorText}
     />;
+  const labelWithTooltip =
+    <p>
+      {label}
+      <IconButton tooltip={tooltip} touch={false} tooltipPosition={tooltipPosition} tooltipStyles={{textAlign: 'left'}}>
+        <TooltipIcon />
+      </IconButton>
+    </p>;
+  const labelComponent = tooltip ? labelWithTooltip : label;
   return (
     <TableRow displayBorder={displayBorder} key={`row${fieldName}`}>
-      <TableRowColumn style={styles.label}><label>{label}</label></TableRowColumn>
+      <TableRowColumn style={styles.label}><label>{labelComponent}</label></TableRowColumn>
       <TableRowColumn style={styles.element}>{component}</TableRowColumn>
     </TableRow>
   );

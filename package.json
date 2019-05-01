@@ -2,7 +2,7 @@
   "name": "OpenVPNConfiguratorForDDWRTAndEdgeRouter",
   "description": "A small Utility to assist with OpenVPN configurations on DD-WRT and EdgeRouter",
   "author": "Yingchun Li<ncepu.lyc@gmail.com>",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "private": true,
   "license": "MIT",
   "dependencies": {
