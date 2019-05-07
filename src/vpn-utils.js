@@ -1,11 +1,11 @@
 import {subnetMaskToCidrPrefix} from "./utils";
-import {executableDir, fs, isDev} from "./environment";
+import {executableDir, fs, isDev, caCertFile} from "./environment";
 import {buildClientCertificate} from "./certificate-utils";
 
 export const isDdWrtMode = routerMode => routerMode === 'DD-WRT';
 export const isEdgeRouterMode = routerMode => routerMode === 'EDGE-SERVER';
 
-
+const copyFileSync = fs.copyFileSync || ((src, dest) => fs.writeFileSync(dest, fs.readFileSync(src)));
 
 /************* client configurations ***********/
 export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters, clientOptions, updateState) => {
@@ -34,25 +34,25 @@ export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters,
       const {certPem: clientCertPem, privateKeyPem: clientPrivateKeyPem} =
         await buildClientCertificate(caCert, caPrivateKey, {...clientCertOptions, validityStart: date});
 
-      // generate client opvn file
-      const clientOvpn = generateClientOvpn(vpnParameters, username);
+      const clientFilenamePrefix = vpnParameters.optPrependClientOutputFileNameWithIPDDNSName ?
+        `${vpnParameters.networkPublicIpOrDDNSAddressOfRouter}-${username}` : username;
 
+      // generate client opvn file
+      const clientOvpn = generateClientOvpn(vpnParameters, clientFilenamePrefix);
       const clientDestDir = `${destDir}/${username}`;
       // const stat = fs.statSync(clientDestDir);
       // if (stat.isDirectory()) {
       //   fs.rmdirSync(clientDestDir);
       // }
-
       if (!fs.existsSync(clientDestDir)) {
         console.log(`making dir [${clientDestDir}]`);
         fs.mkdirSync(clientDestDir);
-      }
 
-      const clientFilenamePrefix = vpnParameters.optPrependClientOutputFileNameWithIPDDNSName ?
-        `${vpnParameters.networkPublicIpOrDDNSAddressOfRouter}-${username}` : username;
+      }
       fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.crt`, clientCertPem);
       fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.key`, clientPrivateKeyPem);
       fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.ovpn`, clientOvpn);
+      copyFileSync(caCertFile, `${clientDestDir}/${clientFilenamePrefix}-ca.crt`)
 
     }
   }
@@ -78,7 +78,7 @@ comp-lzo
 route-gateway ${vpnParameters.routerInternalIP} 
 float
 
-ca ca.crt
+ca ${username}-ca.crt
 cert ${username}.crt
 key ${username}.key
 `;
@@ -98,7 +98,7 @@ persist-key
 persist-tun
 verb 3
 
-ca ca.crt
+ca ${username}-ca.crt
 cert ${username}.crt
 key ${username}.key
 `
@@ -194,5 +194,7 @@ export const generateFireWallConfigForEdgeRouter = (vpnParameters) => {
   return `set firewall name WAN_LOCAL rule ${ruleOrder} action accept
 set firewall name WAN_LOCAL rule ${ruleOrder} description openvpn
 set firewall name WAN_LOCAL rule ${ruleOrder}  destination port ${vpnParameters.vpnPort}
-set firewall name WAN_LOCAL rule ${ruleOrder}  protocol udp`
+set firewall name WAN_LOCAL rule ${ruleOrder}  protocol udp
+commit
+save`
 };

@@ -123,7 +123,7 @@ const removeLocalCommandFile = localFilename => {
 const generateFireWallConfigCommands = vpnParameters => {
   const fireWallCommandPrefix = '/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper';
   const fireWallCommands = generateFireWallConfigForEdgeRouter(vpnParameters).split('\n');
-  return ['begin', ...fireWallCommands, 'commit', 'end']
+  return ['begin', ...fireWallCommands, 'end']
     .map(line => `${fireWallCommandPrefix} ${line}`)
     .join('\n');
 };
