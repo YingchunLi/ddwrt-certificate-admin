@@ -1,5 +1,5 @@
 # ddwrt-certificate-admin
-A small Utility to assist with OpenVPN configurations on DD-WRT
+A small Utility to assist with OpenVPN configurations on DD-WRT and EdgeRouter
 
 ### Install
 ```
