@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+// material UI
 import {Card, CardHeader, CardText} from 'material-ui/Card';
 import { Table, TableRow, TableRowColumn, TableBody, } from 'material-ui/Table';
-
 import Checkbox from 'material-ui/Checkbox';
 import CircularProgress from 'material-ui/CircularProgress';
 import TextField from 'material-ui/TextField';
@@ -539,7 +539,7 @@ key ${username}.key
             ]}
 
             {/* edge router only output */}
-            {certificateStage === 2 && edgeRouterMode && [
+            {certificateStage === 2 && edgeRouterMode && configuratorMode !== 'ssh' && [
               <TableRow displayBorder={false} key="selectKey">
                 <TableRowColumn>
                   <label>Upload your certificate files to the router.<br />

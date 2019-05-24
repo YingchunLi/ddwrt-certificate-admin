@@ -137,6 +137,8 @@ const generateCommands = (configs, vpnParameters, configDir) => {
  
  ${vpnCommands}
  
+ sudo killall -HUP openvpn
+ 
   `;
   return commands;
 };
