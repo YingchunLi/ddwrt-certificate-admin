@@ -54,13 +54,20 @@ const networkPropertiesFields =
       {required: true, pattern: IP_ADDRESS_PATTERN, checker:
         (value) => value && !value.endsWith('.0') && 'network addresses usually end in ".0", but this entry doesn\'t'}
     ],
+    ['Subnet Mask for Internal Network', 'internalNetworkMask',
+      {
+        required: true, 
+        pattern: IP_ADDRESS_PATTERN, 
+        // checker: (value) => value && !value.endsWith('.0') && 'network addresses usually end in ".0", but this entry doesn\'t'
+      }
+    ],
     ['Router internal IP', 'routerInternalIP',
       {required: true, pattern: IP_ADDRESS_PATTERN}
     ],
-    ['Network segments for VPN Clients', 'networkSegment',
+    ['Network segments for VPN Clients', 'vpnClientNetworkSegment',
       {required: true, pattern: IP_ADDRESS_PATTERN}
     ],
-    ['Subnet Mask for VPN Clients', 'subnetMask',
+    ['Subnet Mask for VPN Clients', 'vpnClientSubnetMask',
       {required: true, pattern: IP_ADDRESS_PATTERN}
     ],
   ];

@@ -30,9 +30,10 @@ class StepperApp extends Component {
       networkPublicIpOrDDNSAddressOfRouter: publicAddress,
       vpnPort:                1194,
       internalNetwork:        internalNetwork,
+      internalNetworkMask:    '255.255.255.0',
       routerInternalIP:       routerInternalIP,
-      networkSegment:         '10.0.8.0',
-      subnetMask:             '255.255.255.0',
+      vpnClientNetworkSegment:'10.0.8.0',
+      vpnClientSubnetMask:    '255.255.255.0',
 
       // other options
       optRouterMode:          'EDGE-SERVER',

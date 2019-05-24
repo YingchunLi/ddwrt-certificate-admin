@@ -428,9 +428,9 @@ key ${username}.key
                 <br/>
                 <br/>
 
-                {`Set "Network" to "${vpnParameters.networkSegment}".`}
+                {`Set "Network" to "${vpnParameters.vpnClientNetworkSegment}".`}
                 <br/>
-                {`Set "Netmask" to "${vpnParameters.subnetMask}".`}
+                {`Set "Netmask" to "${vpnParameters.vpnClientSubnetMask}".`}
                 <br/>
                 <br/>
 

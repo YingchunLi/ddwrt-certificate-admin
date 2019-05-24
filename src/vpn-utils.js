@@ -120,11 +120,11 @@ const generateVPNServerConfigForDDWRT = (vpnParameters) => {
 
   const configurableOptions =
     [
-      `push "route ${vpnParameters.internalNetwork} 255.255.255.0"`,
+      `push "route ${vpnParameters.internalNetwork} ${vpnParameters.internalNetworkMask}"`,
       // `push "dhcp-option DNS 8.8.8.8"`,
       `dev tun`,
       vpnParameters.optSendLANTrafficOnly ? '' : 'push "redirect-gateway def1"',        // option: redirect all l
-      `server ${vpnParameters.networkSegment} ${vpnParameters.subnetMask}`,
+      `server ${vpnParameters.vpnClientNetworkSegment} ${vpnParameters.vpnClientSubnetMask}`,
       vpnParameters.vpnPort === 1194 ? '' : `port ${vpnParameters.vpnPort}`,
       vpnParameters.optUseUDP ? 'proto udp' : 'proto tcp',
       //'keepalive 10 120'
@@ -141,22 +141,25 @@ key /tmp/openvpn/key.pem`
 
 export const generateVPNServerConfigForEdgeRouter = (vpnParameters, configDir='/config/auth') => {
   const {
-    networkSegment,
-    subnetMask,
+    vpnClientNetworkSegment,
+    vpnClientSubnetMask,
 
     internalNetwork,
+    internalNetworkMask,
     routerInternalIP
 
   } = vpnParameters;
 
-  const cidrPrefix = subnetMaskToCidrPrefix(subnetMask);
-  const vnpCidr = `${networkSegment}/${cidrPrefix}`;
+  const vpnCidrPrefix = subnetMaskToCidrPrefix(vpnClientSubnetMask);
+  const vnpCidr = `${vpnClientNetworkSegment}/${vpnCidrPrefix}`;
+
+  const internalNetworkCidrPrefix = subnetMaskToCidrPrefix(internalNetworkMask);
 
   return `configure
 
 set interfaces openvpn vtun0 mode server
-set interfaces openvpn vtun0 server subnet ${vnpCidr} 
-set interfaces openvpn vtun0 server push-route ${internalNetwork}/24
+set interfaces openvpn vtun0 server subnet ${vnpCidr}
+set interfaces openvpn vtun0 server push-route ${internalNetwork}/${internalNetworkCidrPrefix}
 set interfaces openvpn vtun0 server name-server ${routerInternalIP}
  
 set interfaces openvpn vtun0 tls ca-cert-file ${configDir}/ca.crt
@@ -180,8 +183,8 @@ export const generateFireWallConfig = (vpnParameters) => {
 
 
 const generateFireWallConfigForDDWRT = (vpnParameters) => {
-  const cidrPrefix = subnetMaskToCidrPrefix(vpnParameters.subnetMask);
-  const vnpCidr = `${vpnParameters.networkSegment}/${cidrPrefix}`;
+  const cidrPrefix = subnetMaskToCidrPrefix(vpnParameters.vpnClientSubnetMask);
+  const vnpCidr = `${vpnParameters.vpnClientNetworkSegment}/${cidrPrefix}`;
   return `iptables -I INPUT 1 -p tcp -dport 443 -j ACCEPT
 iptables -I FORWARD 1 -source  ${vnpCidr} -j ACCEPT
 iptables -I FORWARD -i br0 -o tun0 -j ACCEPT
