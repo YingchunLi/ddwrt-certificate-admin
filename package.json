@@ -2,7 +2,7 @@
   "name": "OpenVPNConfiguratorForDDWRTAndEdgeRouter",
   "description": "A small Utility to assist with OpenVPN configurations on DD-WRT and EdgeRouter",
   "author": "Yingchun Li<ncepu.lyc@gmail.com>",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "private": true,
   "license": "MIT",
   "dependencies": {
@@ -39,6 +39,9 @@
   },
   "build": {
     "appId": "org.yingchunli.openVPNConfigAdminForDDWRTAndEdgeRouter",
+    "directories": {
+      "buildResources": "build"
+    },
     "files": [
       "build/",
       "electron-starter.js",
