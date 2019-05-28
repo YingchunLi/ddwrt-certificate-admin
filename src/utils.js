@@ -62,7 +62,7 @@ const updateFieldErrorText = (fieldName, errorText) => {
 
 // renders a table row
 export const renderTableRow = (label, component, options = {}) => {
-  const {displayBorder = false, key, copyToClipboard, autoLabelWidth=false, tooltip, tooltipPosition='bottom-right'} = options;
+  const {displayBorder = false, key, copyToClipboard, autoLabelWidth=false} = options;
   const elementStyle = autoLabelWidth ? {width: '100%'} : styles.element;
   return (
     <TableRow displayBorder={displayBorder} key={key}>

@@ -89,6 +89,13 @@ class VPNParameters extends Component {
         newVPNParameters.routerInternalIP = value.replace(/\.0$/, '.1');
       }
     }
+    // set default value of 'key name' to 'Public IP or DDNS Address of Router' if not set
+    if (field === 'networkPublicIpOrDDNSAddressOfRouter' && !newVPNParameters.commonNameHasBeenSet) {
+      newVPNParameters.commonName = value;
+    }
+    if (field === 'commonName') {
+      newVPNParameters.commonNameHasBeenSet = true;
+    }
     this.props.onChange && this.props.onChange(newVPNParameters);
   };
 
@@ -178,29 +185,6 @@ class VPNParameters extends Component {
 
     return (
       <div>
-
-        {vpnParameters.optRegenerateCA !== false &&
-        <Card id="certificatePropertiesCard" initiallyExpanded={true}>
-          <CardHeader title="Certificate Properties" actAsExpander={true} showExpandableButton={true}/>
-          <CardText expandable={true}>
-            <Table>
-              <TableBody displayRowCheckbox={false} showRowHover={true}>
-                {
-                  certificatePropertiesFields.map(field => {
-                    const [label, fieldName, options={}] = field;
-                    const {filedType} = options;
-                    const callback = filedType === 'number' ? this.handleNumericChange : this.handleChange;
-                    return renderTextFieldTableRow(label, fieldName, vpnParameters, callback, options);
-                  })
-                }
-                {
-                  renderTableRow('Key Size', keySizeElement)
-                }
-              </TableBody>
-            </Table>
-          </CardText>
-        </Card>
-        }
 
         <Card id="networkPropertiesCard" initiallyExpanded={true}>
           <CardHeader title="Network Properties" actAsExpander={true} showExpandableButton={true} />
@@ -297,6 +281,31 @@ class VPNParameters extends Component {
             </Table>
           </CardText>
         </Card>
+
+        {vpnParameters.optRegenerateCA !== false &&
+        <Card id="certificatePropertiesCard" initiallyExpanded={true}>
+          <CardHeader title="Certificate Properties" actAsExpander={true} showExpandableButton={true}/>
+          <CardText expandable={true}>
+            <Table>
+              <TableBody displayRowCheckbox={false} showRowHover={true}>
+                {
+                  certificatePropertiesFields.map(field => {
+                    const [label, fieldName, options={}] = field;
+                    const {filedType} = options;
+                    const callback = filedType === 'number' ? this.handleNumericChange : this.handleChange;
+                    return renderTextFieldTableRow(label, fieldName, vpnParameters, callback, options);
+                  })
+                }
+                {
+                  renderTableRow('Key Size', keySizeElement)
+                }
+              </TableBody>
+            </Table>
+          </CardText>
+        </Card>
+        }
+
+
 
       </div>
     );

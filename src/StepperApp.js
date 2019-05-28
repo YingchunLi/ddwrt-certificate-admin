@@ -25,8 +25,11 @@ class StepperApp extends Component {
       numberOfUsers: isDev ? 3 : 1,
       userKeysDir:  executableDir,
 
+      // certificate properties
+      commonNameHasBeenSet:   false,        //indicate if user has entered common name or not
       keySize:                2048,
 
+      // network properties
       networkPublicIpOrDDNSAddressOfRouter: publicAddress,
       vpnPort:                1194,
       internalNetwork:        internalNetwork,
