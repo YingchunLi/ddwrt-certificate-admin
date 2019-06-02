@@ -20,6 +20,7 @@ import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from
 
 import {dialog, fs, ping, checkIfCAExists} from './environment';
 import {isEdgeRouterMode} from "./vpn-utils";
+import {VPN_OPTION_CA_USE_EXISTING_LOCAL, VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE} from "./vpn-utils";
 
 const certificatePropertiesFields = [
   ['Country', 'countryName', {tooltip: <div>The country the router is located in.<br/>e.g. 'United States'</div>, tooltipPosition: 'bottom-right'}],
@@ -240,8 +241,9 @@ class VPNParameters extends Component {
 
                 {
                   renderTableRow('Generate a new CA, right?',
-                    renderRadioButtonGroup(['Yes, keep it extra secure', 'No, use the existing one'], [true, false],
-                      'optRegenerateCA', vpnParameters, this.handleChange, {option2Disabled: !caExists}))
+                    renderRadioButtonGroup(['Yes, keep it extra secure', 'No, use certificate in local folder', 'No, use certificate already on router'],
+                      [VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_LOCAL, VPN_OPTION_CA_USE_EXISTING_ROUTE],
+                      'optRegenerateCA', vpnParameters, this.handleChange, {option2Disabled: !caExists, option3Disabled: true}))
                 }
 
                 {
@@ -282,7 +284,7 @@ class VPNParameters extends Component {
           </CardText>
         </Card>
 
-        {vpnParameters.optRegenerateCA !== false &&
+        {vpnParameters.optRegenerateCA === VPN_OPTION_CA_GENERATE_NEW &&
         <Card id="certificatePropertiesCard" initiallyExpanded={true}>
           <CardHeader title="Certificate Properties" actAsExpander={true} showExpandableButton={true}/>
           <CardText expandable={true}>

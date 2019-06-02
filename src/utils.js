@@ -148,14 +148,16 @@ export const renderTextFieldTableRow = (label, fieldName, object, onChange, opti
 };
 
 export const renderRadioButtonGroup = (labels, values, groupName, object, onChange, options={}) => {
-  const {option1Disabled=false, option2Disabled=false} = options;
+  const {option1Disabled=false, option2Disabled=false, option3Disabled=false} = options;
+  const optionsDisabled = [option1Disabled, option2Disabled, option3Disabled];
   return (
     <RadioButtonGroup name={groupName}
                       valueSelected={object[groupName]}
                       onChange={(event, value) => onChange(groupName, value)}
     >
-      <RadioButton label={labels[0]} value={values[0]} disabled={option1Disabled} />
-      <RadioButton label={labels[1]} value={values[1]} disabled={option2Disabled} />
+      {
+        values.map((value, index) => <RadioButton key={index} label={labels[index]} value={value} disabled={optionsDisabled[index]} />)
+      }
     </RadioButtonGroup>
   );
 };

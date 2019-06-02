@@ -24,6 +24,7 @@ import _ from "lodash";
 
 import {autoConfigViaSSH} from './ssh-utils';
 import {isDdWrtMode, isEdgeRouterMode, generateClientConfigs, generateAdditionalConfig, generateFireWallConfig} from "./vpn-utils";
+import {VPN_OPTION_CA_USE_EXISTING_LOCAL} from "./vpn-utils";
 
 
 const ConfiguratorOutput = (
@@ -194,10 +195,10 @@ key ${username}.key
   const generateConfigurations = async () => {
     onConfiguratorStatusChange('sshAutoConfigureOutput', '');
 
-    const buildCAMessage = !vpnParameters.optRegenerateCA ? 'Reusing existing CA' : 'Building CA';
+    const buildCAMessage = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL ? 'Reusing existing CA' : 'Building CA';
     updateState(buildCAMessage);
     console.log(buildCAMessage);
-    const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem } = !vpnParameters.optRegenerateCA ? await reuseExistingCA() : await generateServerCA();
+    const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem } = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL ? await reuseExistingCA() : await generateServerCA();
 
     updateState('Generating server certificates');
     await generateServerConfigs(caCert, caPrivateKey);

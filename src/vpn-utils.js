@@ -5,6 +5,10 @@ import {buildClientCertificate} from "./certificate-utils";
 export const isDdWrtMode = routerMode => routerMode === 'DD-WRT';
 export const isEdgeRouterMode = routerMode => routerMode === 'EDGE-SERVER';
 
+export const VPN_OPTION_CA_GENERATE_NEW = 'generateNew';
+export const VPN_OPTION_CA_USE_EXISTING_LOCAL = 'useExistingLocal';
+export const VPN_OPTION_CA_USE_EXISTING_ROUTE = 'useExistingRoute';
+
 const copyFileSync = fs.copyFileSync || ((src, dest) => fs.writeFileSync(dest, fs.readFileSync(src)));
 
 /************* client configurations ***********/

@@ -18,6 +18,7 @@ import ConfiguratorOutput from './ConfiguratorOutput';
 
 import {executableDir, isDev, caExists} from './environment';
 import {publicAddress, internalNetwork, routerInternalIP} from './environment';
+import {VPN_OPTION_CA_USE_EXISTING_LOCAL, VPN_OPTION_CA_GENERATE_NEW} from "./vpn-utils";
 
 class StepperApp extends Component {
   state = {
@@ -40,7 +41,7 @@ class StepperApp extends Component {
 
       // other options
       optRouterMode:          'EDGE-SERVER',
-      optRegenerateCA:        !(isDev && caExists),
+      optRegenerateCA:        (isDev && caExists) ? VPN_OPTION_CA_USE_EXISTING_LOCAL : VPN_OPTION_CA_GENERATE_NEW,
       optStartWithWANUp:      true,
       optUseUDP:              true,
       optSendLANTrafficOnly:  true,
