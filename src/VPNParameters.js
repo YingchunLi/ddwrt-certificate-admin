@@ -18,7 +18,7 @@ import MenuItem from 'material-ui/MenuItem';
 import {renderTableRow, renderTextFieldTableRow, renderRadioButtonGroup} from './utils';
 import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
-import {dialog, fs, ping, checkIfCAExists} from './environment';
+import {dialog, fs, ping} from './environment';
 import {isEdgeRouterMode} from "./vpn-utils";
 import {VPN_OPTION_CA_USE_EXISTING_LOCAL, VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE} from "./vpn-utils";
 
@@ -156,13 +156,31 @@ class VPNParameters extends Component {
     // e.preventDefault();
   };
 
+  selectCAKeyDir = (e) => {
+    const checkAndSetFilePath = (filePaths) => {
+      if (filePaths && filePaths.length > 0) {
+        const directory = filePaths[0];
+        try {
+          fs.accessSync(directory, fs.R_OK);
+
+          this.handleChange('caKeysDir', directory);
+        } catch (e) {
+          // ignore any exception
+          alert(`Directory [${directory}] is not readable!`)
+        }
+      }
+    };
+
+    dialog.showOpenDialog( {properties: ['openDirectory']}, checkAndSetFilePath);
+    // e.preventDefault();
+  };
+
 
 
 
   render() {
     const {vpnParameters = {}} = this.props;
     const edgeRouterMode = isEdgeRouterMode(vpnParameters.optRouterMode);
-    const caExists = checkIfCAExists();
 
     const numberOfUsersElement =
       <DropDownMenu value={vpnParameters.numberOfUsers} onChange={this.changeNumberOfUsers} >
@@ -183,6 +201,36 @@ class VPNParameters extends Component {
           [1024, 2048, 4096].map(v => <MenuItem key={v} value={v} primaryText={v} />)
         }
       </DropDownMenu>;
+
+
+    const generateCARadioButtonGroupElement =
+      renderRadioButtonGroup(
+        [
+          'Yes, Generate new CA and private key',
+          'No, The router has a CA and the key is stored on the router',
+          'No, The router has a CA and I have a private key',
+        ],
+        [
+          VPN_OPTION_CA_GENERATE_NEW,
+          VPN_OPTION_CA_USE_EXISTING_ROUTE,
+          VPN_OPTION_CA_USE_EXISTING_LOCAL,
+        ],
+        'optRegenerateCA',
+        vpnParameters,
+        this.handleChange,
+        {option2Disabled: !edgeRouterMode});
+
+    const generateCAElement =
+      <div>
+        {generateCARadioButtonGroupElement}
+        {
+          vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL &&
+          <div style={{display: 'flex'}}>
+            <TextField fullWidth={true} value={vpnParameters.caKeysDir} id="caKeysDir"/>
+            <FlatButton label="Browse" primary={true} onClick={this.selectCAKeyDir}/>
+          </div>
+        }
+      </div>;
 
     return (
       <div>
@@ -240,10 +288,7 @@ class VPNParameters extends Component {
                 }
 
                 {
-                  renderTableRow('Generate a new CA, right?',
-                    renderRadioButtonGroup(['Yes, keep it extra secure', 'No, use certificate in local folder', 'No, use certificate already on router'],
-                      [VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_LOCAL, VPN_OPTION_CA_USE_EXISTING_ROUTE],
-                      'optRegenerateCA', vpnParameters, this.handleChange, {option2Disabled: !caExists, option3Disabled: true}))
+                  renderTableRow('Generate a new CA, right?', generateCAElement)
                 }
 
                 {
