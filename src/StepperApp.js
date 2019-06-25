@@ -60,6 +60,9 @@ class StepperApp extends Component {
       sshUsername:    isDev ? 'ubnt': '',
       sshPassword:    '',
 
+      optStoreCaKeys: 'none',
+      caKeysDir:      '',
+
       caCertPem:       '',
       caPrivateKeyPem:  '',
       dhParamsPem:      '',

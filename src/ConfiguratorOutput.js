@@ -15,7 +15,7 @@ import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from
 import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
 
 // electron api
-import {shell, fs, executableDir, isDev, clipboard, ping} from './environment';
+import {shell, fs, executableDir, isDev, clipboard, ping, dialog} from './environment';
 import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
 import {RadioButton, RadioButtonGroup} from "material-ui/RadioButton";
 import FlatButton from 'material-ui/FlatButton';
@@ -47,6 +47,9 @@ const ConfiguratorOutput = (
     sshPort,
     sshUsername,
     sshPassword,
+
+    optStoreCaKeys,
+    caKeysDir,
 
     caCertPem,
     caPrivateKeyPem,
@@ -226,6 +229,8 @@ key ${username}.key
         sshPort,
         sshUsername,
         sshPassword,
+        optStoreCaKeys,
+        caKeysDir,
 
         caCertPem,
         caPrivateKeyPem,
@@ -287,40 +292,107 @@ key ${username}.key
 
   const textFieldRows = 6;
 
+  const selectCAKeyDir = (e) => {
+    const checkAndSetFilePath = (filePaths) => {
+      if (filePaths && filePaths.length > 0) {
+        const caKeysDir = filePaths[0];
+        try {
+          fs.accessSync(caKeysDir, fs.W_OK);
+          onFieldChange({caKeysDir});
+        } catch (e) {
+          // ignore any exception
+          alert(`Directory [${caKeysDir}] is not writable!`)
+        }
+      }
+    };
+
+    dialog.showOpenDialog( {properties: ['openDirectory']}, checkAndSetFilePath);
+    // e.preventDefault();
+  };
+
+  // elements
+  const configuratorModeElement =
+    <RadioButtonGroup name="configuratorMode"
+                      key="configuratorMode"
+                      valueSelected={configuratorMode}
+                      onChange={(event, value) => onChange({...configuratorOutput, configuratorMode: value})}
+    >
+      <RadioButton label="Manually Configure" value="manual" disabled={certificateStage === 1}/>
+      <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1}/>
+    </RadioButtonGroup>;
+
+  const storeCaKeysElement =
+    <div>
+      <RadioButtonGroup name="optStoreCaKeys"
+                        key="optStoreCaKeys"
+                        valueSelected={optStoreCaKeys}
+                        onChange={(event, value) => onChange({...configuratorOutput, optStoreCaKeys: value})}
+      >
+        <RadioButton label="Do not store private key" value="none" disabled={certificateStage === 1}/>
+        <RadioButton label="Store private key on router" value="router" disabled={ddWrtMode} />
+        <RadioButton label="Store private key locally" value="local" disabled={certificateStage === 1}/>
+      </RadioButtonGroup>
+
+      {
+        optStoreCaKeys === 'local' &&
+        <div style={{display: 'flex'}}>
+          <TextField fullWidth={true} value={caKeysDir} id="caKeysDir"/>
+          <FlatButton label="Browse" primary={true} onClick={selectCAKeyDir}/>
+        </div>
+      }
+    </div>;
+
+  const sshServerElement =
+    <TextField
+      id="sshServer"
+      value={sshServer}
+      onChange={changeSSHServer}
+      onBlur={finishChangingSSHServer}
+      errorText={sshServerErrorText}
+      errorStyle={sshServerErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
+        sshServerErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} : undefined}
+    />;
+
+  const sshUsernameElement =
+    <TextField
+      id="sshUsername"
+      value={sshUsername}
+      onChange={(e, value) => onChange({...configuratorOutput, sshUsername: value})}
+    />;
+
+  const sshPasspordElement =
+    <TextField
+      id="sshPassword"
+      type="password"
+      value={sshPassword}
+      onChange={(e, value) => onChange({...configuratorOutput, sshPassword: value})}
+    />;
+
+  const sshOutputRow =
+    <TableRow displayBorder={false} key="sshAutoConfigureOutput">
+      <TableRowColumn colSpan={2}>
+        {
+          configuratorStatus.sshAutoConfigureOutput
+        }
+      </TableRowColumn>
+    </TableRow>;
+
   return <div>
     <Card initiallyExpanded={true}>
       <CardHeader title={`Configurator Output`}/>
       <CardText expandable={true}>
         <div style={{marginBottom: 10, position: 'relative'}}>
+          <Table selectable={false} style={{tableLayout: 'auto'}} key="sshConfigurations">
+            <TableBody displayRowCheckbox={false} showRowHover={true}>
 
-          {edgeRouterMode && [
-            <RadioButtonGroup name="configuratorMode"
-                              key="configuratorMode"
-                              valueSelected={configuratorMode}
-                              onChange={(event, value) => onChange({...configuratorOutput, configuratorMode: value})}
-            >
-              <RadioButton label="Manually Configure" value="manual" disabled={certificateStage === 1}/>
-              <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1}/>
-            </RadioButtonGroup>,
+              { edgeRouterMode && renderTableRow("Configurator Mode", configuratorModeElement, {key: 'sshServer'}) }
 
+              { renderTableRow("Store private key", storeCaKeysElement, {key: 'optStoreCaKeys'}) }
 
-            <Table selectable={false} style={{tableLayout: 'auto'}} key="sshConfigurations">
-              <TableBody displayRowCheckbox={false} showRowHover={false}>
-                {configuratorMode === 'ssh' && [
-                  renderTableRow("SSH server host or ip address",
-                    <TextField
-                      id="sshServer"
-                      value={sshServer}
-                      onChange={changeSSHServer}
-                      onBlur={finishChangingSSHServer}
-                      errorText={sshServerErrorText}
-                      errorStyle={sshServerErrorText === ADDRESS_IS_REACHABLE ? {color: '#8cc152'} :
-                        sshServerErrorText === ADDRESS_BEING_CHECKED ? {color: '#f6bb42'} : undefined}
-                    />,
-                    {
-                      key: 'sshServer', autoLabelWidth: true,
-                    }
-                  ),
+              {
+                edgeRouterMode && configuratorMode === 'ssh' &&
+                [
+                  renderTableRow("SSH server host or ip address", sshServerElement, { key: 'sshServer'}),
 
                   renderTextFieldTableRow('SSH port', 'sshPort', configuratorOutput,
                     (fieldName, sshPort) => onFieldChange({sshPort}),
@@ -334,43 +406,15 @@ key ${username}.key
                     }
                   ),
 
-                  renderTableRow("SSH User name",
-                    <TextField
-                      id="sshUsername"
-                      value={sshUsername}
-                      onChange={(e, value) => onChange({...configuratorOutput, sshUsername: value})}
-                    />,
-                    {
-                      key: 'sshUsername',
-                      autoLabelWidth: true,
-                    }
-                  ),
+                  renderTableRow("SSH User name", sshUsernameElement, { key: 'sshUsername'}),
 
-                  renderTableRow("SSH password",
-                    <TextField
-                      id="sshPassword"
-                      type="password"
-                      value={sshPassword}
-                      onChange={(e, value) => onChange({...configuratorOutput, sshPassword: value})}
-                    />,
-                    {
-                      key: 'sshPassword',
-                      autoLabelWidth: true,
-                    }
-                  ),
+                  renderTableRow("SSH password", sshPasspordElement, { key: 'sshPassword'}),
 
-                  <TableRow displayBorder={false} key="sshAutoConfigureOutput">
-                    <TableRowColumn colSpan={2}>
-                      {
-                        configuratorStatus.sshAutoConfigureOutput
-                      }
-                    </TableRowColumn>
-                  </TableRow>
+                  sshOutputRow
                 ]
-                }
-              </TableBody>
-            </Table>]
-          }
+              }
+            </TableBody>
+          </Table>
 
           <RaisedButton
             label={stateText || 'Click me to run configurator'}
