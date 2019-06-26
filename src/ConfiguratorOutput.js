@@ -24,7 +24,7 @@ import _ from "lodash";
 
 import {autoConfigViaSSH} from './ssh-utils';
 import {isDdWrtMode, isEdgeRouterMode, generateClientConfigs, generateAdditionalConfig, generateFireWallConfig} from "./vpn-utils";
-import {VPN_OPTION_CA_USE_EXISTING_LOCAL} from "./vpn-utils";
+import {VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE, VPN_OPTION_CA_USE_EXISTING_LOCAL} from "./vpn-utils";
 
 
 const ConfiguratorOutput = (
@@ -310,16 +310,31 @@ key ${username}.key
     // e.preventDefault();
   };
 
+  const onConfiguratorModeChange = (configuratorMode) => {
+    if (configuratorMode === 'manual' && optStoreCaKeys === 'router') {
+      onFieldChange({configuratorMode, optStoreCaKeys: 'none'});
+    } else {
+      onFieldChange({configuratorMode});
+    }
+  };
+
   // elements
   const configuratorModeElement =
     <RadioButtonGroup name="configuratorMode"
                       key="configuratorMode"
                       valueSelected={configuratorMode}
-                      onChange={(event, value) => onChange({...configuratorOutput, configuratorMode: value})}
+                      onChange={(event, value) => onConfiguratorModeChange(value)}
     >
-      <RadioButton label="Manually Configure" value="manual" disabled={certificateStage === 1}/>
+      <RadioButton label="Manually Configure" value="manual" disabled={vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_ROUTE}/>
       <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1}/>
     </RadioButtonGroup>;
+
+  const storeCaKeysElementOptionNone = <RadioButton label="Do not store private key" value="none" disabled={certificateStage === 1}/>;
+  const storeCaKeysElementOptionLocal = <RadioButton label="Store private key locally" value="local" disabled={certificateStage === 1}/>;
+  const storeCaKeysElementOptionRouter = <RadioButton label="Store private key on router" value="router" disabled={ddWrtMode} />;
+  const storeCaKeysElementOptions = (edgeRouterMode && configuratorMode === 'ssh') ?
+    [storeCaKeysElementOptionNone, storeCaKeysElementOptionRouter, storeCaKeysElementOptionLocal] :
+    [storeCaKeysElementOptionNone, storeCaKeysElementOptionLocal];
 
   const storeCaKeysElement =
     <div>
@@ -328,9 +343,7 @@ key ${username}.key
                         valueSelected={optStoreCaKeys}
                         onChange={(event, value) => onChange({...configuratorOutput, optStoreCaKeys: value})}
       >
-        <RadioButton label="Do not store private key" value="none" disabled={certificateStage === 1}/>
-        <RadioButton label="Store private key on router" value="router" disabled={ddWrtMode} />
-        <RadioButton label="Store private key locally" value="local" disabled={certificateStage === 1}/>
+        {storeCaKeysElementOptions}
       </RadioButtonGroup>
 
       {
@@ -385,9 +398,9 @@ key ${username}.key
           <Table selectable={false} style={{tableLayout: 'auto'}} key="sshConfigurations">
             <TableBody displayRowCheckbox={false} showRowHover={true}>
 
-              { edgeRouterMode && renderTableRow("Configurator Mode", configuratorModeElement, {key: 'sshServer'}) }
+              { edgeRouterMode && renderTableRow("Configurator Mode", configuratorModeElement, {key: 'configuratorMode'}) }
 
-              { renderTableRow("Store private key", storeCaKeysElement, {key: 'optStoreCaKeys'}) }
+              { vpnParameters.optRegenerateCA === VPN_OPTION_CA_GENERATE_NEW && renderTableRow("Store private key", storeCaKeysElement, {key: 'optStoreCaKeys'}) }
 
               {
                 edgeRouterMode && configuratorMode === 'ssh' &&

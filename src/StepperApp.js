@@ -1,12 +1,7 @@
 import React, {Component} from 'react';
 import _ from 'lodash';
 
-import {
-  Step,
-  Stepper,
-  // StepLabel,
-  StepButton,
-} from 'material-ui/Stepper';
+import {Step, StepButton, Stepper} from 'material-ui/Stepper';
 
 import FlatButton from 'material-ui/FlatButton';
 import RaisedButton from 'material-ui/RaisedButton';
@@ -16,9 +11,8 @@ import VPNParameters from './VPNParameters';
 import CertificateOptions from './CertificateOptions';
 import ConfiguratorOutput from './ConfiguratorOutput';
 
-import {executableDir, isDev, caExists} from './environment';
-import {publicAddress, internalNetwork, routerInternalIP} from './environment';
-import {VPN_OPTION_CA_GENERATE_NEW} from "./vpn-utils";
+import {executableDir, isDev, publicAddress, internalNetwork, routerInternalIP} from './environment';
+import {VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE} from "./vpn-utils";
 
 class StepperApp extends Component {
   state = {
@@ -103,8 +97,14 @@ class StepperApp extends Component {
   };
 
   handleVpnParametersChange = (vpnParameters) => {
-    const clientOptions = this.state.clientOptions;
-    let newClientOptions = _.cloneDeep(clientOptions);
+    // update clientOptions and configuartorOutput if needed
+    const clientOptions = this.updateClientOptions(vpnParameters);
+    const configuratorOutput = this.updateConfiguratorOptions(vpnParameters);
+    this.setState({vpnParameters, clientOptions, configuratorOutput});
+  };
+
+  updateClientOptions = (vpnParameters) => {
+    let newClientOptions = _.cloneDeep(this.state.clientOptions);
 
     const numberOfUsers = vpnParameters.numberOfUsers;
     const currentNumberofUsers = this.state.vpnParameters.numberOfUsers;
@@ -122,9 +122,15 @@ class StepperApp extends Component {
         );
       }
     }
+    return newClientOptions;
+  };
 
-    // handle server
-    this.setState({clientOptions: newClientOptions, vpnParameters})
+  updateConfiguratorOptions = (vpnParameters) => {
+    if (vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_ROUTE) {
+      return {...this.state.configuratorOutput, configuratorMode : 'ssh'};
+    }
+
+    return this.state.configuratorOutput;
   };
 
 
