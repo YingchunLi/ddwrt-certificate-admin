@@ -1,5 +1,5 @@
-import {node_ssh, fs} from "./environment";
-import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
+import {node_ssh, fs, tmp, path} from "./environment";
+import {caCertFile, serverCertFile, serverPrivateKeyFile, dhPemFile} from './environment';
 import {generateFireWallConfigForEdgeRouter, generateVPNServerConfigForEdgeRouter} from './vpn-utils';
 
 const ssh = new node_ssh();
@@ -21,13 +21,30 @@ const connect = async (host, username, password) => {
   await ssh.connect(configs);
 };
 
-const putCertificateFilesToRemote = async (remoteConfigDir='/config/auth') => {
+const putCertificateFilesToRemote = async (storeCaKeys, caPrivateKeyPem, remoteConfigDir='/config/auth') => {
   console.log(`creating remote dir ${remoteConfigDir}`);
   await ssh.mkdir(remoteConfigDir);
-  console.log(`putting ca/server certificate file [${caCertFile}] to remote [${remoteConfigDir}]`);
+
+  console.log(`putting ca certificate file [${caCertFile}] to remote [${remoteConfigDir}]`);
   await ssh.putFile(caCertFile, `${remoteConfigDir}/ca.crt`);
-  console.log(`putting ca/server key file [${caCertFile}] to remote [${remoteConfigDir}]`);
-  await ssh.putFile(caPrivateKeyFile, `${remoteConfigDir}/ca.key`);
+
+  if (storeCaKeys === 'router') {
+    const [caPrivateKeyFile, caPrivateKeyFileName] = generateRandomFile();
+    console.log(`putting ca key file [${caPrivateKeyFileName}] to remote [${remoteConfigDir}]`);
+    try {
+      fs.writeFileSync(caPrivateKeyFileName, caPrivateKeyFileName);
+      await ssh.putFile(caPrivateKeyFileName, `${remoteConfigDir}/ca.key`);
+    } finally {
+      caPrivateKeyFile.removeCallback();
+    }
+  }
+
+  console.log(`putting server certificate file [${serverCertFile}] to remote [${remoteConfigDir}]`);
+  await ssh.putFile(serverCertFile, `${remoteConfigDir}/server.crt`);
+
+  console.log(`putting server key file [${serverPrivateKeyFile}] to remote [${remoteConfigDir}]`);
+  await ssh.putFile(serverPrivateKeyFile, `${remoteConfigDir}/server.key`);
+
   console.log(`putting dh pem file [${dhPemFile}] to remote [${remoteConfigDir}]`);
   await ssh.putFile(dhPemFile, `${remoteConfigDir}/dh.pem`);
 };
@@ -71,14 +88,17 @@ const close = () => {
 // https://stackoverflow.com/questions/20907125/how-execute-multiple-commands-on-ssh2-using-nodejs
 const runCommands = async (commands) => {
   console.log(commands);
-  let localFilename, remoteFilename;
+  let tempfile, filename, localFilename, remoteFilename;
   let fileGenerated = false;
   let filePutToRemote = false;
   try {
     // 1. generate local file
-    const filename = generateRandomFilename();
-    localFilename = `${filename}.local`;
+    [tempfile, localFilename, filename] = generateRandomFile();
     remoteFilename = `/tmp/${filename}`;
+
+    console.log(filename);
+    console.log(localFilename);
+    console.log(remoteFilename);
 
     generateCommandFileLocally(localFilename, commands);
     fileGenerated = true;
@@ -88,26 +108,21 @@ const runCommands = async (commands) => {
 
     // execute command remotely
     await executeRemoteCommandFile(remoteFilename);
-
   } catch (e) {
     throw new Error("Error running command:" + e.message);
   } finally {
     if (filePutToRemote) await removeRemoteCommandFile(remoteFilename);
     if (fileGenerated) removeLocalCommandFile(localFilename);
+    if (tempfile) tempfile.removeCallback();
   }
 };
 
-const generateRandomFilename = (length=10) => {
-  let filename = "";
-  const POSSIBLE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  const POSSIBLE_CHARS_LENGTH = POSSIBLE_CHARS.length;
-
-  for (let i = 0; i < length; i++) {
-    const randomCharIndex = Math.floor(Math.random() * POSSIBLE_CHARS_LENGTH);
-    filename += POSSIBLE_CHARS.charAt(randomCharIndex);
-  }
-
-  return filename;
+const generateRandomFile = () => {
+  const tempfile = tmp.fileSync();
+  const filename = tempfile.name;
+  console.log(filename);
+  console.log(path.basename(filename));
+  return [tempfile, filename, path.basename(filename)]
 };
 
 const generateCommandFileLocally = (fileName, commands) => {
@@ -147,15 +162,18 @@ export const autoConfigViaSSH = async (configs, vpnParameters, configDir='/confi
   const {
     sshServer,
     sshUsername,
-    sshPassword
+    sshPassword,
+    optStoreCaKeys,
+    caPrivateKeyPem,
   } = configs;
+
 
   let connectionOpen = false;
   try {
     await connect(sshServer, sshUsername, sshPassword);
     connectionOpen = true;
 
-    await putCertificateFilesToRemote();
+    await putCertificateFilesToRemote(optStoreCaKeys, caPrivateKeyPem);
 
     const commands = generateCommands(configs, vpnParameters, configDir);
     await runCommands(commands);

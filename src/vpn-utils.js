@@ -1,6 +1,6 @@
 import {subnetMaskToCidrPrefix} from "./utils";
-import {executableDir, fs, isDev, caCertFile} from "./environment";
-import {buildClientCertificate} from "./certificate-utils";
+import {executableDir, fs, isDev, caCertFile, dhPemFile} from "./environment";
+import {buildClientCertificate, generateDHParams, staticDhPem} from "./certificate-utils";
 
 export const isDdWrtMode = routerMode => routerMode === 'DD-WRT';
 export const isEdgeRouterMode = routerMode => routerMode === 'EDGE-SERVER';
@@ -110,6 +110,44 @@ key ${username}.key
 
 
 /************* open vpn server settings *********/
+export const generateServerConfigs = async (caCert, caPrivateKey, vpnParameters, serverOptions, updateState) => {
+  // create server key pair
+  if (serverOptions && serverOptions.length > 0) {
+    let date = new Date();
+    if (isDev) {
+      date.setDate(date.getDate() - 1);
+    }
+
+    const userKeysDir = vpnParameters.userKeysDir ||executableDir;
+    for (let i = 0; i < serverOptions.length; ++i) {
+      const option = serverOptions[i];
+      const username = option.username;
+      const serverCertOptions =
+        {
+          commonName: username,
+          keySize: vpnParameters.keySize,
+          password: option.password,
+          validityStart: date,
+          linuxFormat: true,
+        };
+      updateState(`Generating certificates for server ${i+1}`);
+
+      const {certPem, privateKeyPem} =
+        await buildClientCertificate(caCert, caPrivateKey, serverCertOptions);
+
+      // const destDir = `${userKeysDir}/${username}`;
+      const destDir = `${userKeysDir}`;   //TODO: this assumes we only have one server
+
+      if (!fs.existsSync(destDir)) {
+        console.log(`making dir [${destDir}]`);
+        fs.mkdirSync(destDir);
+      }
+      fs.writeFileSync(`${destDir}/${username}.crt`, certPem);
+      fs.writeFileSync(`${destDir}/${username}.key`, privateKeyPem);
+    }
+  }
+};
+
 export const generateAdditionalConfig = (vpnParameters) => {
   if (isDdWrtMode(vpnParameters.optRouterMode)) {
     return generateVPNServerConfigForDDWRT(vpnParameters)
@@ -139,8 +177,8 @@ const generateVPNServerConfigForDDWRT = (vpnParameters) => {
 
 dh /tmp/openvpn/dh.pem
 ca /tmp/openvpn/ca.crt
-cert /tmp/openvpn/ca.crt
-key /tmp/openvpn/key.pem`
+cert /tmp/openvpn/server.crt
+key /tmp/openvpn/server.key`
 };
 
 export const generateVPNServerConfigForEdgeRouter = (vpnParameters, configDir='/config/auth') => {
@@ -167,12 +205,31 @@ set interfaces openvpn vtun0 server push-route ${internalNetwork}/${internalNetw
 set interfaces openvpn vtun0 server name-server ${routerInternalIP}
  
 set interfaces openvpn vtun0 tls ca-cert-file ${configDir}/ca.crt
-set interfaces openvpn vtun0 tls cert-file ${configDir}/ca.crt
-set interfaces openvpn vtun0 tls key-file ${configDir}/ca.key
+set interfaces openvpn vtun0 tls cert-file ${configDir}/server.crt
+set interfaces openvpn vtun0 tls key-file ${configDir}/server.key
 set interfaces openvpn vtun0 tls dh-file ${configDir}/dh.pem
 
 commit
 save`;
+};
+
+/**** dh.pem ****/
+export const generateDHParam = async (useStaticDHPerm = false) => {
+  let dhParamsPem = staticDhPem;
+  if (!useStaticDHPerm) {
+    // create DH.pem
+    console.log('start creating dhparam');
+
+    // const dhParamsPem = dhparam();
+    dhParamsPem = await generateDHParams();
+
+    console.log('end creating dh.pem');
+    console.log('dh.pem:', dhParamsPem);
+  }
+
+  fs.writeFileSync(dhPemFile, dhParamsPem);
+
+  return dhParamsPem;
 };
 
 /************* firewall settings *********/

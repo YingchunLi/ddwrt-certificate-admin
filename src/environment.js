@@ -12,6 +12,10 @@ export const fs = remote.require('fs');
 export const os = remote.require('os');
 export const ping = remote.require('ping');
 export const node_ssh = remote.require('node-ssh');
+export const tmp = remote.require('tmp');
+export const path = remote.require('path');
+
+tmp.setGracefulCleanup();
 
 // env related
 const {process} = remote;
@@ -21,10 +25,9 @@ export const isDev = !!electron_start_url;        // we are in dev mode env ELEC
 
 // ca files
 export const caCertFile = `${executableDir}/ca.crt`;
-export const caPrivateKeyFile = `${executableDir}/ca.key`;
+export const serverCertFile = `${executableDir}/server.crt`;
+export const serverPrivateKeyFile = `${executableDir}/server.key`;
 export const dhPemFile = `${executableDir}/dh.pem`;
-export const caExists = fs.existsSync(caCertFile) && fs.existsSync(caPrivateKeyFile);
-export const checkIfCAExists = () => fs.existsSync(caCertFile) && fs.existsSync(caPrivateKeyFile);
 
 // network address
 const interfaces = os.networkInterfaces();

@@ -139,6 +139,7 @@ export const buildClientCertificate = async (caCert, caPrivateKey, options = {})
     validityEnd,
     keySize,
     password,
+    linuxFormat = false,
   } = options;
 
   // key pair
@@ -223,7 +224,7 @@ export const buildClientCertificate = async (caCert, caPrivateKey, options = {})
   cert.sign(caPrivateKey);
 
   // convert a Forge certificate to PEM
-  const certPem = pki.certificateToPem(cert);
+  const certPem = linuxFormat ? removeCarriageReturns(pki.certificateToPem(cert)) : pki.certificateToPem(cert);
 
   return {cert, certPem, privateKeyPem};
 };

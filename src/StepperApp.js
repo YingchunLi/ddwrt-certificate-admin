@@ -14,72 +14,75 @@ import ConfiguratorOutput from './ConfiguratorOutput';
 import {executableDir, isDev, publicAddress, internalNetwork, routerInternalIP} from './environment';
 import {VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE} from "./vpn-utils";
 
+const INITIAL_STATE = {
+  vpnParameters: {
+    numberOfUsers: isDev ? 3 : 1,
+    userKeysDir:  executableDir,
+
+    // certificate properties
+    commonNameHasBeenSet:   false,        //indicate if user has entered common name or not
+    keySize:                2048,
+
+    // network properties
+    networkPublicIpOrDDNSAddressOfRouter: publicAddress,
+    vpnPort:                1194,
+    internalNetwork:        internalNetwork,
+    internalNetworkMask:    '255.255.255.0',
+    routerInternalIP:       routerInternalIP,
+    vpnClientNetworkSegment:'10.0.8.0',
+    vpnClientSubnetMask:    '255.255.255.0',
+
+    // other options
+    optRouterMode:          'EDGE-SERVER',
+    optRegenerateCA:        VPN_OPTION_CA_GENERATE_NEW,
+    caKeysDir:              '',
+    optStartWithWANUp:      true,
+    optUseUDP:              true,
+    optSendLANTrafficOnly:  true,
+    optCertificateOnlyAuth: true,
+    optPrependClientOutputFileNameWithIPDDNSName: false,
+  },
+  serverOptions: [{username: 'server'}],
+  clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
+  showServerOptions: false,
+
+  configuratorOutput: {
+    configuratorMode: 'manual',
+    sshServer:      isDev ? publicAddress : '',
+    sshServerErrorText: '',
+    sshPort:        22,
+    sshUsername:    isDev ? 'ubnt': '',
+    sshPassword:    '',
+
+    optStoreCaKeys: 'none',
+    caKeysDir:      '',
+
+    caCertPem:       '',
+    caPrivateKeyPem:  '',
+    dhParamsPem:      '',
+    additionalConfig: '',
+    ipTablesConfig: '',
+    certificateStage: 0,
+    stateText: '',
+
+    ignoreConfigurationErrors: false,
+  },
+
+  configuratorStatus : {
+    sshAutoConfigureOutput: '',
+  },
+
+  // stepper related
+  finished: false,
+  stepIndex: 0,
+
+  // snackbar
+  snackbarOpen: false,
+  snackbarMessage: '',
+};
+
 class StepperApp extends Component {
-  state = {
-    vpnParameters: {
-      numberOfUsers: isDev ? 3 : 1,
-      userKeysDir:  executableDir,
-
-      // certificate properties
-      commonNameHasBeenSet:   false,        //indicate if user has entered common name or not
-      keySize:                2048,
-
-      // network properties
-      networkPublicIpOrDDNSAddressOfRouter: publicAddress,
-      vpnPort:                1194,
-      internalNetwork:        internalNetwork,
-      internalNetworkMask:    '255.255.255.0',
-      routerInternalIP:       routerInternalIP,
-      vpnClientNetworkSegment:'10.0.8.0',
-      vpnClientSubnetMask:    '255.255.255.0',
-
-      // other options
-      optRouterMode:          'EDGE-SERVER',
-      optRegenerateCA:        VPN_OPTION_CA_GENERATE_NEW,
-      caKeysDir:              '',
-      optStartWithWANUp:      true,
-      optUseUDP:              true,
-      optSendLANTrafficOnly:  true,
-      optCertificateOnlyAuth: true,
-      optPrependClientOutputFileNameWithIPDDNSName: false,
-    },
-    // serverOptions: [{username: 'server1'}],
-    clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
-
-    configuratorOutput: {
-      configuratorMode: 'manual',
-      sshServer:      isDev ? publicAddress : '',
-      sshServerErrorText: '',
-      sshPort:        22,
-      sshUsername:    isDev ? 'ubnt': '',
-      sshPassword:    '',
-
-      optStoreCaKeys: 'none',
-      caKeysDir:      '',
-
-      caCertPem:       '',
-      caPrivateKeyPem:  '',
-      dhParamsPem:      '',
-      additionalConfig: '',
-      ipTablesConfig: '',
-      certificateStage: 0,
-      stateText: '',
-
-      ignoreConfigurationErrors: false,
-    },
-
-    configuratorStatus : {
-      sshAutoConfigureOutput: '',
-    },
-
-    // stepper related
-    finished: false,
-    stepIndex: 0,
-
-    // snackbar
-    snackbarOpen: false,
-    snackbarMessage: '',
-  };
+  state = INITIAL_STATE;
 
   handleNext = () => {
     const {stepIndex} = this.state;
@@ -148,7 +151,7 @@ class StepperApp extends Component {
   };
 
   render() {
-    const {vpnParameters, serverOptions, clientOptions, configuratorOutput, configuratorStatus, finished, stepIndex} = this.state;
+    const {vpnParameters, serverOptions, clientOptions, showServerOptions, configuratorOutput, configuratorStatus, finished, stepIndex} = this.state;
     const contentStyle = {margin: '0 16px'};
 
     const vpnParametersPage =
@@ -159,7 +162,7 @@ class StepperApp extends Component {
 
     const clientOptionsPage =
       <div>
-        {serverOptions &&
+        {serverOptions && showServerOptions &&
         <CertificateOptions
           mode="Server"
           certificateOptions={serverOptions}
@@ -218,7 +221,7 @@ class StepperApp extends Component {
                 href="#reset"
                 onClick={(event) => {
                   event.preventDefault();
-                  this.setState({stepIndex: 0, finished: false});
+                  this.setState({...INITIAL_STATE, stepIndex: 0, finished: false});
                 }}
               >
                 Click here

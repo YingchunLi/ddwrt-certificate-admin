@@ -1,30 +1,43 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 // material UI
 import {Card, CardHeader, CardText} from 'material-ui/Card';
-import { Table, TableRow, TableRowColumn, TableBody, } from 'material-ui/Table';
+import {Table, TableBody, TableRow, TableRowColumn,} from 'material-ui/Table';
 import Checkbox from 'material-ui/Checkbox';
 import CircularProgress from 'material-ui/CircularProgress';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 
-import {errorTexts, renderTableRow, renderTextFieldTableRow} from './utils';
-import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
+import {
+  ADDRESS_BEING_CHECKED,
+  ADDRESS_IS_REACHABLE,
+  ADDRESS_NOT_REACHABLE,
+  errorTexts,
+  renderTableRow,
+  renderTextFieldTableRow
+} from './utils';
 
-import {buildCA, readExistingCA, buildClientCertificate, generateDHParams, staticDhPem} from './certificate-utils';
-
+import {buildCA, readExistingCA} from './certificate-utils';
 // electron api
-import {shell, fs, executableDir, isDev, clipboard, ping, dialog} from './environment';
-import {caCertFile, caPrivateKeyFile, dhPemFile} from './environment';
+import {caCertFile, clipboard, dialog, executableDir, fs, isDev, ping, shell} from './environment';
 import {RadioButton, RadioButtonGroup} from "material-ui/RadioButton";
 import FlatButton from 'material-ui/FlatButton';
 
 import _ from "lodash";
 
 import {autoConfigViaSSH} from './ssh-utils';
-import {isDdWrtMode, isEdgeRouterMode, generateClientConfigs, generateAdditionalConfig, generateFireWallConfig} from "./vpn-utils";
-import {VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE, VPN_OPTION_CA_USE_EXISTING_LOCAL} from "./vpn-utils";
+import {
+  generateAdditionalConfig,
+  generateClientConfigs,
+  generateDHParam,
+  generateFireWallConfig,
+  generateServerConfigs,
+  isDdWrtMode,
+  isEdgeRouterMode,
+  VPN_OPTION_CA_GENERATE_NEW,
+  VPN_OPTION_CA_USE_EXISTING_LOCAL,
+  VPN_OPTION_CA_USE_EXISTING_ROUTE
+} from "./vpn-utils";
 
 
 const ConfiguratorOutput = (
@@ -68,30 +81,34 @@ const ConfiguratorOutput = (
   const ddWrtMode = isDdWrtMode(optRouterMode);
   const edgeRouterMode = isEdgeRouterMode(optRouterMode);
 
-  const updateState = stateText => onChange({...configuratorOutput, stateText, certificateStage: 1});
-
-  const generateServerCA = async () => {
-    console.log('building root ca');
-
-    const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem} = await buildCA(vpnParameters);
-
-    // create client key pairs and sign their public key using ca root certificate
-    fs.writeFileSync(caCertFile, caCertPem);
-    fs.writeFileSync(caPrivateKeyFile, caPrivateKeyPem);
-
-    return {
-      caCert,
-      caPrivateKey,
-      caCertPem,
-      caPrivateKeyPem,
-    }
+  const updateState = stateText => {
+    onChange({...configuratorOutput, stateText, certificateStage: 1});
+    console.log(stateText);
   };
 
-  const reuseExistingCA = async () => {
+  const generateNewCA = async (vpnParameters, configuratorOutput) => {
+    const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem} = await buildCA(vpnParameters);
+
+    fs.writeFileSync(caCertFile, caCertPem);
+    if (configuratorOutput.optStoreCaKeys === 'local') {
+      fs.writeFileSync(`${configuratorOutput.caKeysDir}/ca.key`, caPrivateKeyPem);
+      fs.writeFileSync(`${configuratorOutput.caKeysDir}/ca.crt`, caCertPem);
+    }
+
+    return {caCert, caPrivateKey, caCertPem, caPrivateKeyPem};
+  };
+
+  const reuseExistingCA = async (vpnParameters) => {
     try {
+      const localCAKeyFile = `${vpnParameters.caKeysDir}/ca.key`;
+      const localCACertFile = `${vpnParameters.caKeysDir}/ca.crt`;
       //TODO: check existence
-      const caCertPem = fs.readFileSync(caCertFile, 'utf8');
-      const caPrivateKeyPem = fs.readFileSync(caPrivateKeyFile, 'utf8');
+      const caPrivateKeyPem = fs.readFileSync(localCAKeyFile, 'utf8');
+      //TODO: generate crt from private key if no cert exists
+      const caCertPem = fs.readFileSync(localCACertFile, 'utf8');
+
+      // write to client output dir (used by client configurations and ssh auto configuration)
+      fs.writeFileSync(caCertFile, caCertPem);
 
       const {caCert, caPrivateKey} =  await readExistingCA(caPrivateKeyPem, caCertPem);
 
@@ -107,84 +124,7 @@ const ConfiguratorOutput = (
     }
   };
 
-  const generateDHParam = async () => {
-    // create DH.pem
-    console.log('start creating dhparam');
-
-    // const dhParamsPem = dhparam();
-    const dhParamsPem = await generateDHParams();
-
-    console.log('end creating dh.pem');
-    console.log('dh.pem:', dhParamsPem);
-
-    fs.writeFileSync(dhPemFile, dhParamsPem);
-
-    return dhParamsPem;
-  };
-
-  const generateServerConfigs = async (caCert, caPrivateKey) => {
-    // create server key pair
-    if (serverOptions && serverOptions.length > 0) {
-      console.log('generating server certificates');
-
-      let date = new Date();
-      if (isDev) {
-        date.setDate(date.getDate() - 1);
-      }
-
-      const userKeysDir = vpnParameters.userKeysDir ||executableDir;
-      for (let i = 0; i < serverOptions.length; ++i) {
-        const option = serverOptions[i];
-        const username = option.username;
-        const clientCertOptions =
-          {
-            commonName: username,
-            keySize: vpnParameters.keySize,
-            password: option.password,
-          };
-        updateState(`Generating certificates for server ${i+1}`);
-        console.log(`Generating certificates for server ${i+1}`);
-
-        const {certPem, privateKeyPem} =
-          await buildClientCertificate(caCert, caPrivateKey, {...clientCertOptions, validityStart: date});
-
-        // generate client opvn file
-        const clientOvpn=`client
-remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
-port ${vpnParameters.vpnPort}
-dev tun
-#secret ${username}.key
-proto tcp
-
-comp-lzo
-route-gateway ${vpnParameters.routerInternalIP} 
-float
-
-ca ca.crt
-cert ${username}.crt
-key ${username}.key
-`;
-
-        const destDir = `${userKeysDir}/${username}`;
-        // const stat = fs.statSync(clientDestDir);
-        // if (stat.isDirectory()) {
-        //   fs.rmdirSync(clientDestDir);
-        // }
-
-        if (!fs.existsSync(destDir)) {
-          console.log(`making dir [${destDir}]`);
-          fs.mkdirSync(destDir);
-        }
-        fs.writeFileSync(`${destDir}/${username}.crt`, certPem);
-        fs.writeFileSync(`${destDir}/${username}.key`, privateKeyPem);
-        fs.writeFileSync(`${destDir}/${username}.ovpn`, clientOvpn);
-
-      }
-    }
-  };
-
-
-  const runAutoConfig = async (configuratorOutput) => {
+  const runAutoConfig = async (configuratorOutput, vpnParameters) => {
     updateState('Auto configure using ssh settings');
     try {
       await autoConfigViaSSH(configuratorOutput, vpnParameters);
@@ -198,19 +138,20 @@ key ${username}.key
   const generateConfigurations = async () => {
     onConfiguratorStatusChange('sshAutoConfigureOutput', '');
 
-    const buildCAMessage = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL ? 'Reusing existing CA' : 'Building CA';
+    const useExistingLocalCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL;
+    const buildCAMessage = useExistingLocalCAKey ? 'Reusing existing CA' : 'Building CA';
     updateState(buildCAMessage);
-    console.log(buildCAMessage);
-    const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem } = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL ? await reuseExistingCA() : await generateServerCA();
+    const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem} =
+      useExistingLocalCAKey ? await reuseExistingCA(vpnParameters) : await generateNewCA(vpnParameters, configuratorOutput);
 
     updateState('Generating server certificates');
-    await generateServerConfigs(caCert, caPrivateKey);
+    await generateServerConfigs(caCert, caPrivateKey, vpnParameters, serverOptions, updateState);
 
     updateState('Generating client certificates');
     await generateClientConfigs(caCert, caPrivateKey, vpnParameters, clientOptions, updateState);
 
     updateState('Generating dh pem');
-    const dhParamsPem = isDev ? staticDhPem: await generateDHParam();
+    const dhParamsPem = await generateDHParam(isDev);
 
     const additionalConfig = generateAdditionalConfig(vpnParameters);
     const ipTablesConfig = generateFireWallConfig(vpnParameters);
@@ -615,7 +556,7 @@ key ${username}.key
 
                   <br/>
 
-                  upload: <strong>ca.crt</strong>, <strong>ca.key</strong>, and <strong>dh.pem</strong> to <strong>/config/auth</strong>
+                  upload: <strong>ca.crt</strong>, <strong>server.key</strong>, <strong>server.crt</strong> and <strong>dh.pem</strong> to <strong>/config/auth</strong>
                 </TableRowColumn>
               </TableRow>,
 
