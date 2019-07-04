@@ -24,7 +24,7 @@ const INITIAL_STATE = {
     keySize:                2048,
 
     // network properties
-    networkPublicIpOrDDNSAddressOfRouter: publicAddress,
+    networkPublicIpOrDDNSAddressOfRouter: isDev ? (publicAddress || '192.168.1.1') : publicAddress,
     vpnPort:                1194,
     internalNetwork:        internalNetwork,
     internalNetworkMask:    '255.255.255.0',
@@ -34,7 +34,7 @@ const INITIAL_STATE = {
 
     // other options
     optRouterMode:          'EDGE-SERVER',
-    optRegenerateCA:        VPN_OPTION_CA_GENERATE_NEW,
+    optRegenerateCA:        isDev ? VPN_OPTION_CA_USE_EXISTING_ROUTE : VPN_OPTION_CA_GENERATE_NEW,
     caKeysDir:              '',
     optStartWithWANUp:      true,
     optUseUDP:              true,
@@ -48,11 +48,11 @@ const INITIAL_STATE = {
 
   configuratorOutput: {
     configuratorMode: 'manual',
-    sshServer:      isDev ? publicAddress : '',
+    sshServer:      isDev ? (publicAddress || '192.168.1.1') : '',
     sshServerErrorText: '',
     sshPort:        22,
     sshUsername:    isDev ? 'ubnt': '',
-    sshPassword:    '',
+    sshPassword:    isDev ? 'ubnt': '',
 
     optStoreCaKeys: 'none',
     caKeysDir:      '',
@@ -189,6 +189,7 @@ class StepperApp extends Component {
         onFieldChange={fieldStatus => {this.setState((prevState) => ({configuratorOutput: {...prevState.configuratorOutput, ...fieldStatus}}))}}
         configuratorStatus={configuratorStatus}
         onConfiguratorStatusChange={(key, value) => this.setState({configuratorStatus: {...configuratorStatus, [key]: value}})}
+        onConfiguratorError={(sshAutoConfigureOutput) => this.setState({configuratorOutput : {...configuratorOutput, certificateStage: 0}, configuratorStatus: {...configuratorStatus, sshAutoConfigureOutput}})}
         showMessage={this.showMessage}
       />;
 

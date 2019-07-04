@@ -25,7 +25,7 @@ import FlatButton from 'material-ui/FlatButton';
 
 import _ from "lodash";
 
-import {autoConfigViaSSH} from './ssh-utils';
+import {autoConfigViaSSH, loadCAKeyFromRouter, loadCACertFromRouter} from './ssh-utils';
 import {
   generateAdditionalConfig,
   generateClientConfigs,
@@ -50,6 +50,7 @@ const ConfiguratorOutput = (
     onFieldChange,
     configuratorStatus,
     onConfiguratorStatusChange,
+    onConfiguratorError,
     showMessage
   }) => {
 
@@ -112,16 +113,21 @@ const ConfiguratorOutput = (
 
       const {caCert, caPrivateKey} =  await readExistingCA(caPrivateKeyPem, caCertPem);
 
-      return {
-        caCert,
-        caPrivateKey,
-        caCertPem,
-        caPrivateKeyPem,
-      }
+      return {caCert, caPrivateKey, caCertPem, caPrivateKeyPem};
     } catch (e) {
       // error log here
 
     }
+  };
+
+  const loadCAFromRouter = async (configs) => {
+    const caPrivateKeyPem = await loadCAKeyFromRouter(configs);
+    const caCertPem = await loadCACertFromRouter(configs);
+
+    fs.writeFileSync(caCertFile, caCertPem);
+
+    const {caCert, caPrivateKey} =  await readExistingCA(caPrivateKeyPem, caCertPem);
+    return {caCert, caPrivateKey, caCertPem, caPrivateKeyPem};
   };
 
   const runAutoConfig = async (configuratorOutput, vpnParameters) => {
@@ -138,11 +144,20 @@ const ConfiguratorOutput = (
   const generateConfigurations = async () => {
     onConfiguratorStatusChange('sshAutoConfigureOutput', '');
 
+    const generateNewCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_GENERATE_NEW;
     const useExistingLocalCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL;
-    const buildCAMessage = useExistingLocalCAKey ? 'Reusing existing CA' : 'Building CA';
+    const useExistingRouterCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_ROUTE;
+    const buildCAMessage = useExistingLocalCAKey ? 'Reusing existing local CA' :
+      (useExistingRouterCAKey ? 'Loading CA key/cert from router' : 'Building CA');
     updateState(buildCAMessage);
+
     const {caCert, caPrivateKey, caCertPem, caPrivateKeyPem} =
-      useExistingLocalCAKey ? await reuseExistingCA(vpnParameters) : await generateNewCA(vpnParameters, configuratorOutput);
+      useExistingLocalCAKey ?
+        await reuseExistingCA(vpnParameters) :
+        (useExistingRouterCAKey ?
+            await loadCAFromRouter(configuratorOutput) :
+            await generateNewCA(vpnParameters, configuratorOutput)
+        );
 
     updateState('Generating server certificates');
     await generateServerConfigs(caCert, caPrivateKey, vpnParameters, serverOptions, updateState);
@@ -157,10 +172,13 @@ const ConfiguratorOutput = (
     const ipTablesConfig = generateFireWallConfig(vpnParameters);
 
     // auto configuration
-    if (configuratorMode === 'ssh') {
-      await runAutoConfig(configuratorOutput, vpnParameters)
+    if (edgeRouterMode && configuratorMode === 'ssh' && generateNewCAKey) {
+      await runAutoConfig({...configuratorOutput, caPrivateKeyPem}, vpnParameters)
     }
 
+    if (edgeRouterMode && configuratorMode === 'ssh' && useExistingRouterCAKey) {
+      onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure done successfully`);
+    }
     // update final
     onChange(
       {
@@ -185,6 +203,14 @@ const ConfiguratorOutput = (
         ignoreConfigurationErrors,
       }
     );
+  };
+
+  const generateConfigurationsCatchError = async () => {
+    try {
+      await generateConfigurations();
+    } catch (e) {
+      onConfiguratorError(`Auto configure failed : ${e.message}. Please do the configuration manually`);
+    }
   };
 
   const copyToClipboard = (data, what) => {
@@ -260,6 +286,7 @@ const ConfiguratorOutput = (
   };
 
   // elements
+  const configuratorAlreadyRun = certificateStage !== 0;
   const configuratorModeElement =
     <RadioButtonGroup name="configuratorMode"
                       key="configuratorMode"
@@ -267,12 +294,12 @@ const ConfiguratorOutput = (
                       onChange={(event, value) => onConfiguratorModeChange(value)}
     >
       <RadioButton label="Manually Configure" value="manual" disabled={vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_ROUTE}/>
-      <RadioButton label="Configure via SSH" value="ssh" disabled={certificateStage === 1}/>
+      <RadioButton label="Configure via SSH" value="ssh" disabled={configuratorAlreadyRun}/>
     </RadioButtonGroup>;
 
-  const storeCaKeysElementOptionNone = <RadioButton label="Do not store private key" value="none" disabled={certificateStage === 1}/>;
-  const storeCaKeysElementOptionLocal = <RadioButton label="Store private key locally" value="local" disabled={certificateStage === 1}/>;
-  const storeCaKeysElementOptionRouter = <RadioButton label="Store private key on router" value="router" disabled={ddWrtMode} />;
+  const storeCaKeysElementOptionNone = <RadioButton label="Do not store private key" value="none" disabled={configuratorAlreadyRun}/>;
+  const storeCaKeysElementOptionLocal = <RadioButton label="Store private key locally" value="local" disabled={configuratorAlreadyRun}/>;
+  const storeCaKeysElementOptionRouter = <RadioButton label="Store private key on router" value="router" disabled={ddWrtMode || configuratorAlreadyRun} />;
   const storeCaKeysElementOptions = (edgeRouterMode && configuratorMode === 'ssh') ?
     [storeCaKeysElementOptionNone, storeCaKeysElementOptionRouter, storeCaKeysElementOptionLocal] :
     [storeCaKeysElementOptionNone, storeCaKeysElementOptionLocal];
@@ -373,8 +400,8 @@ const ConfiguratorOutput = (
           <RaisedButton
             label={stateText || 'Click me to run configurator'}
             primary={true}
-            onClick={generateConfigurations}
-            disabled={certificateStage === 1 || (!_.isEmpty(errorTexts) && !ignoreConfigurationErrors)}
+            onClick={generateConfigurationsCatchError}
+            disabled={configuratorAlreadyRun || (!_.isEmpty(errorTexts) && !ignoreConfigurationErrors)}
           />
         </div>
 

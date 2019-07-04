@@ -32,7 +32,8 @@ const putCertificateFilesToRemote = async (storeCaKeys, caPrivateKeyPem, remoteC
     const [caPrivateKeyFile, caPrivateKeyFileName] = generateRandomFile();
     console.log(`putting ca key file [${caPrivateKeyFileName}] to remote [${remoteConfigDir}]`);
     try {
-      fs.writeFileSync(caPrivateKeyFileName, caPrivateKeyFileName);
+      console.log("writing caPrivateKeyPem:" + caPrivateKeyPem);
+      fs.writeFileSync(caPrivateKeyFileName, caPrivateKeyPem);
       await ssh.putFile(caPrivateKeyFileName, `${remoteConfigDir}/ca.key`);
     } finally {
       caPrivateKeyFile.removeCallback();
@@ -191,3 +192,35 @@ export const autoConfigViaSSH = async (configs, vpnParameters, configDir='/confi
     close();
   }
 };
+
+const readFileContentFromRouter = async (configs, filename, configDir='/config/auth') => {
+  const {
+    sshServer,
+    sshUsername,
+    sshPassword,
+  } = configs;
+
+  let connectionOpen = false;
+  try {
+    await connect(sshServer, sshUsername, sshPassword);
+    connectionOpen = true;
+
+    const commandResult = await ssh.execCommand(`cat ${configDir}/${filename}`);
+    if (commandResult.stderr) {
+      console.error(commandResult.stderr);
+      throw new Error(commandResult.stderr.replace('cat: ', ''));
+    }
+    return commandResult.stderr ? null : commandResult.stdout;
+  } catch (e) {
+    if (!connectionOpen) {
+      throw new Error("failed to open ssh connection: " + e.message);
+    } else {
+      throw e;
+    }
+  } finally {
+    close();
+  }
+};
+
+export const loadCAKeyFromRouter = async (configs) => await readFileContentFromRouter(configs, "ca.key");
+export const loadCACertFromRouter = async (configs) => await readFileContentFromRouter(configs, "ca.crt");
