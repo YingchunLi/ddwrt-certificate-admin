@@ -24,10 +24,16 @@ export const executableDir = process.env.PORTABLE_EXECUTABLE_DIR || './output';
 export const isDev = !!electron_start_url;        // we are in dev mode env ELECTRON_START_URL is set
 
 // ca files
-export const caCertFile = `${executableDir}/ca.crt`;
-export const serverCertFile = `${executableDir}/server.crt`;
-export const serverPrivateKeyFile = `${executableDir}/server.key`;
-export const dhPemFile = `${executableDir}/dh.pem`;
+export let caCertFile = `${executableDir}/ca.crt`;
+export let serverCertFile = `${executableDir}/server.crt`;
+export let serverPrivateKeyFile = `${executableDir}/server.key`;
+export let dhPemFile = `${executableDir}/dh.pem`;
+export const changeKeyfilesPath = (keyFilesDir) => {
+  caCertFile = `${keyFilesDir}/ca.crt`;
+  serverCertFile = `${keyFilesDir}/server.crt`;
+  serverPrivateKeyFile = `${keyFilesDir}/server.key`;
+  dhPemFile = `${keyFilesDir}/dh.pem`;
+};
 
 // network address
 const interfaces = os.networkInterfaces();

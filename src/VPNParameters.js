@@ -19,6 +19,7 @@ import {renderTableRow, renderTextFieldTableRow, renderRadioButtonGroup} from '.
 import {ADDRESS_BEING_CHECKED, ADDRESS_IS_REACHABLE, ADDRESS_NOT_REACHABLE} from "./utils";
 
 import {dialog, fs, ping} from './environment';
+import {changeKeyfilesPath} from './environment';
 import {isEdgeRouterMode} from "./vpn-utils";
 import {VPN_OPTION_CA_USE_EXISTING_LOCAL, VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE} from "./vpn-utils";
 
@@ -97,6 +98,11 @@ class VPNParameters extends Component {
     if (field === 'commonName') {
       newVPNParameters.commonNameHasBeenSet = true;
     }
+
+    if (field === 'userKeysDir') {
+      changeKeyfilesPath(value);
+    }
+
     this.props.onChange && this.props.onChange(newVPNParameters);
   };
 

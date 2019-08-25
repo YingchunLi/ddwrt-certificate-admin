@@ -11,7 +11,7 @@ import VPNParameters from './VPNParameters';
 import CertificateOptions from './CertificateOptions';
 import ConfiguratorOutput from './ConfiguratorOutput';
 
-import {executableDir, isDev, publicAddress, internalNetwork, routerInternalIP} from './environment';
+import {executableDir, changeKeyfilesPath, isDev, publicAddress, internalNetwork, routerInternalIP} from './environment';
 import {VPN_OPTION_CA_GENERATE_NEW, VPN_OPTION_CA_USE_EXISTING_ROUTE} from "./vpn-utils";
 
 const INITIAL_STATE = {
@@ -150,6 +150,12 @@ class StepperApp extends Component {
     });
   };
 
+  resetConfiguration = (event) => {
+    event.preventDefault();
+    changeKeyfilesPath(executableDir);
+    this.setState({...INITIAL_STATE, stepIndex: 0, finished: false});
+  };
+
   render() {
     const {vpnParameters, serverOptions, clientOptions, showServerOptions, configuratorOutput, configuratorStatus, finished, stepIndex} = this.state;
     const contentStyle = {margin: '0 16px'};
@@ -221,8 +227,7 @@ class StepperApp extends Component {
               <a
                 href="#reset"
                 onClick={(event) => {
-                  event.preventDefault();
-                  this.setState({...INITIAL_STATE, stepIndex: 0, finished: false});
+                  this.resetConfiguration(event);
                 }}
               >
                 Click here
@@ -258,6 +263,7 @@ class StepperApp extends Component {
     );
 
   }
+
 }
 
 StepperApp.propTypes = {};

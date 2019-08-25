@@ -136,6 +136,7 @@ const ConfiguratorOutput = (
       await autoConfigViaSSH(configuratorOutput, vpnParameters);
       onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure done successfully`);
     } catch (e) {
+      console.error(e);
       onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure failed : ${e.message}. Please do the configuration manually`);
     } finally {
     }
@@ -209,6 +210,7 @@ const ConfiguratorOutput = (
     try {
       await generateConfigurations();
     } catch (e) {
+      console.error(e);
       onConfiguratorError(`Auto configure failed : ${e.message}. Please do the configuration manually`);
     }
   };

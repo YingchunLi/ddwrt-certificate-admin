@@ -17,6 +17,10 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Unreleased]
 
+## [2.1.2] - 2019-08-25
+### Fixed
+- Fixed issue with "file not found" when "Directory to put generated user certificates and keys" option is specified
+
 ## [1.2.0] - 2019-03-05
 ### Changed
 - Automatically add openvpn firewall rule for edgeRouter (no checking for existing rule yet)
