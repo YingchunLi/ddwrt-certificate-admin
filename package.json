@@ -8,7 +8,7 @@
   "dependencies": {
     "immutability-helper": "^2.6.4",
     "ip": "^1.1.5",
-    "lodash": "^4.17.5",
+    "lodash": "^4.17.13",
     "material-ui": "^0.20.0",
     "node-forge": "^0.7.1",
     "node-ssh": "^5.1.2",
