@@ -6,6 +6,8 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Todos]
 - [ ] I'm thinking we should add two more UI elements to the "Other Options" section. These will decide whether to use SHA1 and Blowfish, or other algorithms instead. I'll get you more information on that, but they would both be drop-downs, and would affect the last set of lines in the configurator output, as well as a line or two in the .ovpn file output.
+- [ ] Custom firewall rule number.
+- [ ] Binary releases for OSX and Linux.
 
 ## [EdgeServer todos] 
 - [x] output server keys would be output to correct files
@@ -16,6 +18,15 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 
 ## [Unreleased]
+
+## [2.2.0] - 2020-05-14
+### Added
+- A Preflight Check function. When running the autoconfig via SSH, there should be a button that checks some basics and outputs results to user...
+  a. Router responds to SSH.
+  b. Username and Password are correct.
+  c. Router is firmware >1.8 (I had an issue with the Configurator on an ErX running 1.7 that was resolved by upgrading to the latest 1.x firmware)
+  d. If 'keys are store on router' is selected, keys exist.
+  e. Grep existing firewall rules for the VPN port; 'green' if it doesn't exist or is already forwarded to router, 'red' if it's pointing somewhere else (recommend user change port).
 
 ## [2.1.2] - 2019-08-25
 ### Fixed

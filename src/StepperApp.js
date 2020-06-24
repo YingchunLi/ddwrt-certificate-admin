@@ -62,14 +62,11 @@ const INITIAL_STATE = {
     dhParamsPem:      '',
     additionalConfig: '',
     ipTablesConfig: '',
-    certificateStage: 0,
-    stateText: '',
+    certificateStage: 0,    // 0 - not started, 1 - in progress, 2 - done
+    stateTexts : [],
+    preFlightCheckState: '',
 
     ignoreConfigurationErrors: false,
-  },
-
-  configuratorStatus : {
-    sshAutoConfigureOutput: '',
   },
 
   // stepper related
@@ -156,8 +153,26 @@ class StepperApp extends Component {
     this.setState({...INITIAL_STATE, stepIndex: 0, finished: false});
   };
 
+  onUpdateState = (newStateText, {append, certificateStage} = {}) => {
+    this.setState((prevState, props) => {
+      const previousStateTexts = _.clone(prevState.configuratorOutput.stateTexts);
+      var stateTexts = [];
+      if (append) {
+        var lastPreviousStateText = _.last(previousStateTexts);
+        lastPreviousStateText += newStateText;
+        stateTexts = _.take(previousStateTexts, previousStateTexts.length -1)
+        stateTexts.push(lastPreviousStateText);
+      } else {
+        stateTexts = [...previousStateTexts, newStateText];
+      }
+      const configuratorOutput = {...prevState.configuratorOutput, stateTexts, certificateStage};
+      return {...prevState, configuratorOutput};
+      
+    })
+  };
+
   render() {
-    const {vpnParameters, serverOptions, clientOptions, showServerOptions, configuratorOutput, configuratorStatus, finished, stepIndex} = this.state;
+    const {vpnParameters, serverOptions, clientOptions, showServerOptions, configuratorOutput, finished, stepIndex} = this.state;
     const contentStyle = {margin: '0 16px'};
 
     const vpnParametersPage =
@@ -191,11 +206,10 @@ class StepperApp extends Component {
         serverOptions={serverOptions}
         clientOptions={clientOptions}
         configuratorOutput={configuratorOutput}
-        onChange={configuratorOutput => {console.log(configuratorOutput);this.setState({configuratorOutput})}}
+
+        // onChange={configuratorOutput => {console.log(configuratorOutput);this.setState({configuratorOutput})}}
         onFieldChange={fieldStatus => {this.setState((prevState) => ({configuratorOutput: {...prevState.configuratorOutput, ...fieldStatus}}))}}
-        configuratorStatus={configuratorStatus}
-        onConfiguratorStatusChange={(key, value) => this.setState({configuratorStatus: {...configuratorStatus, [key]: value}})}
-        onConfiguratorError={(sshAutoConfigureOutput) => this.setState({configuratorOutput : {...configuratorOutput, certificateStage: 0}, configuratorStatus: {...configuratorStatus, sshAutoConfigureOutput}})}
+        onUpdateState={this.onUpdateState}
         showMessage={this.showMessage}
       />;
 

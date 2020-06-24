@@ -25,7 +25,7 @@ import FlatButton from 'material-ui/FlatButton';
 
 import _ from "lodash";
 
-import {autoConfigViaSSH, loadCAKeyFromRouter, loadCACertFromRouter} from './ssh-utils';
+import {autoConfigViaSSH, loadCAKeyFromRouter, loadCACertFromRouter, checkSSHConfig} from './ssh-utils';
 import {
   generateAdditionalConfig,
   generateClientConfigs,
@@ -39,18 +39,18 @@ import {
   VPN_OPTION_CA_USE_EXISTING_ROUTE
 } from "./vpn-utils";
 
-
+/**
+ * Componet for configurator output
+ */
 const ConfiguratorOutput = (
   {
     vpnParameters,
     serverOptions,
     clientOptions,
     configuratorOutput,
-    onChange = ()=>{},
+
     onFieldChange,
-    configuratorStatus,
-    onConfiguratorStatusChange,
-    onConfiguratorError,
+    onUpdateState,
     showMessage
   }) => {
 
@@ -58,7 +58,6 @@ const ConfiguratorOutput = (
     configuratorMode,
     sshServer,
     sshServerErrorText,
-    sshPort,
     sshUsername,
     sshPassword,
 
@@ -72,18 +71,19 @@ const ConfiguratorOutput = (
     ipTablesConfig,
 
     certificateStage,
-    stateText,
+    stateTexts,
 
     ignoreConfigurationErrors
   }
     = configuratorOutput;
-
+  
   const optRouterMode = vpnParameters.optRouterMode;
   const ddWrtMode = isDdWrtMode(optRouterMode);
   const edgeRouterMode = isEdgeRouterMode(optRouterMode);
 
-  const updateState = stateText => {
-    onChange({...configuratorOutput, stateText, certificateStage: 1});
+  const updateState = (stateText, {finish=false, append=false} = {}) => {
+    const certificateStage = !finish ? 1 : 0;
+    onUpdateState(stateText, {certificateStage, append});
     console.log(stateText);
   };
 
@@ -134,16 +134,16 @@ const ConfiguratorOutput = (
     updateState('Auto configure using ssh settings');
     try {
       await autoConfigViaSSH(configuratorOutput, vpnParameters);
-      onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure done successfully`);
+      updateState(`Auto configure done successfully`);
     } catch (e) {
       console.error(e);
-      onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure failed : ${e.message}. Please do the configuration manually`);
+      updateState(`Auto configure failed : ${e.message}. Please do the configuration manually`);
     } finally {
     }
   };
 
   const generateConfigurations = async () => {
-    onConfiguratorStatusChange('sshAutoConfigureOutput', '');
+    onFieldChange({stateTexts: []});
 
     const generateNewCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_GENERATE_NEW;
     const useExistingLocalCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL;
@@ -178,19 +178,19 @@ const ConfiguratorOutput = (
     }
 
     if (edgeRouterMode && configuratorMode === 'ssh' && useExistingRouterCAKey) {
-      onConfiguratorStatusChange('sshAutoConfigureOutput', `Auto configure done successfully`);
+      updateState(`Auto configure done successfully`);
     }
     // update final
-    onChange(
+    onFieldChange(
       {
-        configuratorMode,
-        sshServer,
-        sshServerErrorText,
-        sshPort,
-        sshUsername,
-        sshPassword,
-        optStoreCaKeys,
-        caKeysDir,
+        // configuratorMode,
+        // sshServer,
+        // sshServerErrorText,
+        // sshPort,
+        // sshUsername,
+        // sshPassword,
+        // optStoreCaKeys,
+        // caKeysDir,
 
         caCertPem,
         caPrivateKeyPem,
@@ -199,7 +199,7 @@ const ConfiguratorOutput = (
         ipTablesConfig,
 
         certificateStage: 2,
-        stateText: '',
+        // stateTexts,
 
         ignoreConfigurationErrors,
       }
@@ -211,7 +211,29 @@ const ConfiguratorOutput = (
       await generateConfigurations();
     } catch (e) {
       console.error(e);
-      onConfiguratorError(`Auto configure failed : ${e.message}. Please do the configuration manually`);
+      updateState(`Auto configure failed : ${e.message}. Please do the configuration manually`, {finish: true});
+      // onConfiguratorError(`Auto configure failed : ${e.message}. Please do the configuration manually`);
+    }
+  };
+
+  const preFlightCheck = async () => {
+    try {
+      onFieldChange({stateTexts: []});
+
+      // const useExistingLocalCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_LOCAL;
+      // const useExistingRouterCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_ROUTE;
+      // const buildCAMessage = useExistingLocalCAKey ? 'Reusing existing local CA' :
+        // (useExistingRouterCAKey ? 'Loading CA key/cert from router' : 'Building CA');
+      // updatePreFlightCheckState(buildCAMessage);
+      updateState("Doing preflight check");
+  
+      const useExistingRouterCAKey = vpnParameters.optRegenerateCA === VPN_OPTION_CA_USE_EXISTING_ROUTE;
+      const sshOutput = await checkSSHConfig(vpnParameters, configuratorOutput, updateState, useExistingRouterCAKey) ;
+      updateState(sshOutput || "Pre flight check done successfully.", {finish: true});
+    } catch (e) {
+      console.error(e);
+      updateState(`preFlight check failed:\n${e.message}.`, {finish: true});
+      // onConfiguratorError(`preFlight check failed:\n${e.message}.`);
     }
   };
 
@@ -222,8 +244,8 @@ const ConfiguratorOutput = (
 
   const changeSSHServer = (e, sshServer) => {
     // this.handleChange('networkPublicIpOrDDNSAddressOfRouter', host);
-    // onFieldChange({sshServer});
-    onChange({...configuratorOutput, sshServer});
+    onFieldChange({sshServer});
+    // onChange({...configuratorOutput, sshServer});
     // pingAddress(sshServer);
   };
 
@@ -299,9 +321,9 @@ const ConfiguratorOutput = (
       <RadioButton label="Configure via SSH" value="ssh" disabled={configuratorAlreadyRun}/>
     </RadioButtonGroup>;
 
-  const storeCaKeysElementOptionNone = <RadioButton label="Do not store private key" value="none" disabled={configuratorAlreadyRun}/>;
-  const storeCaKeysElementOptionLocal = <RadioButton label="Store private key locally" value="local" disabled={configuratorAlreadyRun}/>;
-  const storeCaKeysElementOptionRouter = <RadioButton label="Store private key on router" value="router" disabled={ddWrtMode || configuratorAlreadyRun} />;
+  const storeCaKeysElementOptionNone = <RadioButton key="storeCaKeysElementOptionNone" label="Do not store private key" value="none" disabled={configuratorAlreadyRun}/>;
+  const storeCaKeysElementOptionLocal = <RadioButton key="storeCaKeysElementOptionLocal" label="Store private key locally" value="local" disabled={configuratorAlreadyRun}/>;
+  const storeCaKeysElementOptionRouter = <RadioButton key="storeCaKeysElementOptionRouter" label="Store private key on router" value="router" disabled={ddWrtMode || configuratorAlreadyRun} />;
   const storeCaKeysElementOptions = (edgeRouterMode && configuratorMode === 'ssh') ?
     [storeCaKeysElementOptionNone, storeCaKeysElementOptionRouter, storeCaKeysElementOptionLocal] :
     [storeCaKeysElementOptionNone, storeCaKeysElementOptionLocal];
@@ -311,7 +333,7 @@ const ConfiguratorOutput = (
       <RadioButtonGroup name="optStoreCaKeys"
                         key="optStoreCaKeys"
                         valueSelected={optStoreCaKeys}
-                        onChange={(event, value) => onChange({...configuratorOutput, optStoreCaKeys: value})}
+                        onChange={(event, value) => onFieldChange({optStoreCaKeys: value})}
       >
         {storeCaKeysElementOptions}
       </RadioButtonGroup>
@@ -340,7 +362,7 @@ const ConfiguratorOutput = (
     <TextField
       id="sshUsername"
       value={sshUsername}
-      onChange={(e, value) => onChange({...configuratorOutput, sshUsername: value})}
+      onChange={(e, value) => onFieldChange({sshUsername: value})}
     />;
 
   const sshPasspordElement =
@@ -348,17 +370,17 @@ const ConfiguratorOutput = (
       id="sshPassword"
       type="password"
       value={sshPassword}
-      onChange={(e, value) => onChange({...configuratorOutput, sshPassword: value})}
+      onChange={(e, value) => onFieldChange({sshPassword: value})}
     />;
 
   const sshOutputRow =
-    <TableRow displayBorder={false} key="sshAutoConfigureOutput">
-      <TableRowColumn colSpan={2}>
-        {
-          configuratorStatus.sshAutoConfigureOutput
-        }
-      </TableRowColumn>
-    </TableRow>;
+    <TextField
+      id="sshOutput"
+      fullWidth={true}
+      value={stateTexts ? stateTexts.join("\n") : ""}
+      multiLine={true}
+      disabled={true}
+    />;
 
   return <div>
     <Card initiallyExpanded={true}>
@@ -393,22 +415,39 @@ const ConfiguratorOutput = (
 
                   renderTableRow("SSH password", sshPasspordElement, { key: 'sshPassword'}),
 
-                  sshOutputRow
                 ]
               }
             </TableBody>
           </Table>
 
+
+
+          { edgeRouterMode && configuratorMode === 'ssh' &&
+            [
+              <RaisedButton
+                key="PreflightCheckButton"
+                label="Preflight check"
+                primary={true}
+                onClick={preFlightCheck}
+                disabled={configuratorAlreadyRun || (!_.isEmpty(errorTexts) && !ignoreConfigurationErrors)}
+              />,
+              <span key="span"> </span>
+            ]
+          }
           <RaisedButton
-            label={stateText || 'Click me to run configurator'}
+            label="Click me to run configurator"
             primary={true}
             onClick={generateConfigurationsCatchError}
             disabled={configuratorAlreadyRun || (!_.isEmpty(errorTexts) && !ignoreConfigurationErrors)}
           />
+ 
         </div>
 
         {/*{stateText}*/}
         {certificateStage === 1 && <CircularProgress/>}
+
+        {/* ssh output */}  
+        {!_.isEmpty(stateTexts) && sshOutputRow}
 
         {
           !_.isEmpty(errorTexts) &&

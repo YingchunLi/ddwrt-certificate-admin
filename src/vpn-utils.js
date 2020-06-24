@@ -193,14 +193,14 @@ export const generateVPNServerConfigForEdgeRouter = (vpnParameters, configDir='/
   } = vpnParameters;
 
   const vpnCidrPrefix = subnetMaskToCidrPrefix(vpnClientSubnetMask);
-  const vnpCidr = `${vpnClientNetworkSegment}/${vpnCidrPrefix}`;
+  const vpnCidr = `${vpnClientNetworkSegment}/${vpnCidrPrefix}`;
 
   const internalNetworkCidrPrefix = subnetMaskToCidrPrefix(internalNetworkMask);
 
   return `configure
 
 set interfaces openvpn vtun0 mode server
-set interfaces openvpn vtun0 server subnet ${vnpCidr}
+set interfaces openvpn vtun0 server subnet ${vpnCidr}
 set interfaces openvpn vtun0 server push-route ${internalNetwork}/${internalNetworkCidrPrefix}
 set interfaces openvpn vtun0 server name-server ${routerInternalIP}
  
@@ -262,3 +262,34 @@ set firewall name WAN_LOCAL rule ${ruleOrder}  protocol udp
 commit
 save`
 };
+
+/************ check version */
+// const sourceScriptTemplate = `source /opt/vyatta/etc/functions/script-template`
+// export const getFirmwareVersionCommand = () => `${sourceScriptTemplate}
+export const getFirmwareVersionCommand = () => `/opt/vyatta/bin/vyatta-op-cmd-wrapper show version | grep Version | awk '{print $2}' | cut -d'+' -f 1 | sed 's/^v//' | cut -d '.' -f 1-2`
+// export const getFirewallRuleStatusCommand = () => `/opt/vyatta/bin/vyatta-op-cmd-wrapper show firewall name WAN_LOCAL | grep ':openvpn'`;
+// export const getOpenVPNInterfaceCommand = () => `/opt/vyatta/bin/vyatta-show-interfaces.pl --action=show-brief --intf-type=openvpn`;
+// export const getOpenVPNInterfaceCommand = () => `/opt/vyatta/bin/vyatta-op-cmd-wrapper show interfaces openvpn`;
+export const getOpenVPNInterfaceCommand = () => `/opt/vyatta/bin/vyatta-op-cmd-wrapper show configuration commands | grep 'interfaces openvpn'`;
+
+export const getOpenVPNInterfacePushRouteCommand = (vpnParameters) => {
+  const {
+    internalNetwork,
+    internalNetworkMask,
+  } = vpnParameters;
+
+  const internalNetworkCidrPrefix = subnetMaskToCidrPrefix(internalNetworkMask);
+  const pushRoute = `${internalNetwork}/${internalNetworkCidrPrefix}`;
+
+  return `/opt/vyatta/bin/vyatta-op-cmd-wrapper show configuration commands | grep 'interfaces openvpn' | grep push-route | grep ${pushRoute}`;
+
+}
+
+// port forward
+export const getPortForwardCommand = ({vpnPort = 1194}) => `/opt/vyatta/bin/vyatta-op-cmd-wrapper show configuration commands | grep 'set port-forward' | grep 'original-port ${vpnPort}'`;
+
+export const getPortForwardForwardToAddressCommand = (ruleNumber) => {
+  return `/opt/vyatta/bin/vyatta-op-cmd-wrapper show configuration commands | grep 'set port-forward rule ${ruleNumber}' | grep forward-to`;
+}
+
+// ls /opt/vyatta/share/vyatta-op/templates/show
