@@ -33,7 +33,7 @@
     "analyze": "source-map-explorer build/static/js/main.*"
   },
   "devDependencies": {
-    "electron": "^1.8.2",
+    "electron": "^7.2.4",
     "electron-builder": "^20.0.4",
     "foreman": "^2.0.0",
     "source-map-explorer": "^1.5.0"
