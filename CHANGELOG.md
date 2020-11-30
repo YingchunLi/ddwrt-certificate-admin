@@ -19,6 +19,10 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Unreleased]
 
+## [2.3.0] - 2020-11-30
+### Added
+- New certificate option to specify certificate duration (1/5/10 years)
+
 ## [2.2.0] - 2020-05-14
 ### Added
 - A Preflight Check function. When running the autoconfig via SSH, there should be a button that checks some basics and outputs results to user...

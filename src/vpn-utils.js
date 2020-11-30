@@ -30,6 +30,7 @@ export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters,
         {
           commonName: username,
           keySize: vpnParameters.keySize,
+          certificateDuration: vpnParameters.certificateDuration,
           password: client.password,
         };
       updateState(`Generating certificates for client ${i+1}`);
@@ -126,6 +127,7 @@ export const generateServerConfigs = async (caCert, caPrivateKey, vpnParameters,
         {
           commonName: username,
           keySize: vpnParameters.keySize,
+          certificateDuration: vpnParameters.certificateDuration,
           password: option.password,
           validityStart: date,
           linuxFormat: true,

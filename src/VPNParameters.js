@@ -31,6 +31,7 @@ const certificatePropertiesFields = [
   ['Email Address', 'email', {tooltip: "Your e-mail address."}],
   ['Key CN', 'commonName', {required: true, tooltip: <div>The dns or dynamic dns name assigned to this router, for which cert will be issued. <br/> e.g. ubnt.com; should match the first field of Network Properties section.</div>}],
   ['Key Name', 'organizationalUnitName', {tooltip: <div>If you're not sure what to put here, just put the same thing as the box above.</div>}],
+  // ['Certificate duration', 'certificateDuration', {tooltip: <div>How long the certificate would be valid?</div>}],
   // ['PCKS11 Module Path', 'pcks11ModulePath'],
   // ['PCKS11 PIN', 'pcks11Pin'],
   // ['Key Size', 'keySize', true]
@@ -208,6 +209,13 @@ class VPNParameters extends Component {
         }
       </DropDownMenu>;
 
+    const certificateDurationElement =
+      <DropDownMenu value={vpnParameters.certificateDuration} onChange={(event, index, value) => this.handleChange('certificateDuration', value)} >
+        {
+          [1, 5, 10].map(v => <MenuItem key={v} value={v} primaryText={v} />)
+        }
+      </DropDownMenu>;
+
 
     const generateCARadioButtonGroupElement =
       renderRadioButtonGroup(
@@ -351,6 +359,9 @@ class VPNParameters extends Component {
                 }
                 {
                   renderTableRow('Key Size', keySizeElement)
+                }
+                {
+                  renderTableRow('Certificate Duration (in years)', certificateDurationElement)
                 }
               </TableBody>
             </Table>

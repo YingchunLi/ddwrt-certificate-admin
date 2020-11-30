@@ -41,6 +41,7 @@ export const buildCA = async (options = {}) => {
   const {
     validityStart = new Date(),
     validityEnd,
+    certificateDuration = 1,
     keySize,
   } = options;
 
@@ -59,7 +60,7 @@ export const buildCA = async (options = {}) => {
     caCert.validity.notAfter = validityEnd;
   } else {
     caCert.validity.notAfter = new Date();
-    caCert.validity.notAfter.setFullYear(caCert.validity.notBefore.getFullYear() + 1);
+    caCert.validity.notAfter.setFullYear(caCert.validity.notBefore.getFullYear() + certificateDuration);
   }
 
   // subject and issuers should be the same
@@ -137,6 +138,7 @@ export const buildClientCertificate = async (caCert, caPrivateKey, options = {})
   const {
     validityStart = new Date(),
     validityEnd,
+    certificateDuration = 1,
     keySize,
     password,
     linuxFormat = false,
@@ -157,7 +159,7 @@ export const buildClientCertificate = async (caCert, caPrivateKey, options = {})
     cert.validity.notAfter = validityEnd;
   } else {
     cert.validity.notAfter = new Date();
-    cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+    cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + certificateDuration);
   }
 
   // subject and issuers should be the same

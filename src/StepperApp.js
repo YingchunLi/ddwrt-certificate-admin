@@ -22,6 +22,7 @@ const INITIAL_STATE = {
     // certificate properties
     commonNameHasBeenSet:   false,        //indicate if user has entered common name or not
     keySize:                2048,
+    certificateDuration:    1,            //how long the certificate would be valid
 
     // network properties
     networkPublicIpOrDDNSAddressOfRouter: isDev ? (publicAddress || '192.168.1.1') : publicAddress,
