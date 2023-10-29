@@ -125,7 +125,7 @@ export const buildCA = async (options = {}) => {
 
   const caPrivateKey = caKeys.privateKey;
   // self sign
-  caCert.sign(caPrivateKey);
+  caCert.sign(caPrivateKey, forge.md.sha256.create());
 
   // convert a Forge certificate to PEM
   const caCertPem = removeCarriageReturns(pki.certificateToPem(caCert));
@@ -223,7 +223,7 @@ export const buildClientCertificate = async (caCert, caPrivateKey, options = {})
   // cert.setExtensions(extensions);
 
   // sign using root ca's private key
-  cert.sign(caPrivateKey);
+  cert.sign(caPrivateKey, forge.md.sha256.create());
 
   // convert a Forge certificate to PEM
   const certPem = linuxFormat ? removeCarriageReturns(pki.certificateToPem(cert)) : pki.certificateToPem(cert);
