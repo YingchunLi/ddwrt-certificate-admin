@@ -19,6 +19,14 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Unreleased]
 
+## [2.3.2] - 2025-08-19
+### Added
+- Create release v2.3.2.
+
+## [2.3.1] - 2025-08-19
+### Added
+- Internal release.
+
 ## [2.3.0] - 2020-11-30
 ### Added
 - New certificate option to specify certificate duration (1/5/10 years)
