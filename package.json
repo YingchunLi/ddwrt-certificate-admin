@@ -30,7 +30,9 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder -w",
+    "dist": "electron-builder -m -w",
+    "dist:mac": "electron-builder -m",
+    "dist:win": "electron-builder -w",
     "analyze": "source-map-explorer build/static/js/main.*"
   },
   "devDependencies": {
@@ -53,11 +55,30 @@
       "main": "electron-starter.js"
     },
     "win": {
+      "artifactName": "${productName}-${version}.${ext}",
       "target": [
         {
           "target": "portable",
           "arch": [
             "ia32"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "category": "public.app-category.utilities",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
           ]
         }
       ]

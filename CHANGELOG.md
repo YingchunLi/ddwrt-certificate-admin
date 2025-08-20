@@ -22,6 +22,7 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 ## [2.3.2] - 2025-08-20
 ### Added
 - Upgrade electron to 28.3.3
+- Add build target for mac os
 
 ## [2.3.1] - 2025-08-19
 ### Added
