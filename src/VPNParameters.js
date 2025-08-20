@@ -144,7 +144,7 @@ class VPNParameters extends Component {
     this.pingAddress(host);
   };
 
-  selectKeyDir = (e) => {
+  selectKeyDir = async (e) => {
     const checkAndSetFilePath = (filePaths) => {
       if (filePaths && filePaths.length > 0) {
         const directory = filePaths[0];
@@ -159,11 +159,18 @@ class VPNParameters extends Component {
       }
     };
 
-    dialog.showOpenDialog( {properties: ['openDirectory']}, checkAndSetFilePath);
+    try {
+      const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+      if (!canceled) {
+        checkAndSetFilePath(filePaths);
+      }
+    } catch (err) {
+      console.error('showOpenDialog failed', err);
+    }
     // e.preventDefault();
   };
 
-  selectCAKeyDir = (e) => {
+  selectCAKeyDir = async (e) => {
     const checkAndSetFilePath = (filePaths) => {
       if (filePaths && filePaths.length > 0) {
         const directory = filePaths[0];
@@ -178,7 +185,14 @@ class VPNParameters extends Component {
       }
     };
 
-    dialog.showOpenDialog( {properties: ['openDirectory']}, checkAndSetFilePath);
+    try {
+      const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+      if (!canceled) {
+        checkAndSetFilePath(filePaths);
+      }
+    } catch (err) {
+      console.error('showOpenDialog failed', err);
+    }
     // e.preventDefault();
   };
 

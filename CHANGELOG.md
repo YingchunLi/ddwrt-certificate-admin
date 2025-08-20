@@ -19,9 +19,9 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Unreleased]
 
-## [2.3.2] - 2025-08-19
+## [2.3.2] - 2025-08-20
 ### Added
-- Create release v2.3.2.
+- Upgrade electron to 28.3.3
 
 ## [2.3.1] - 2025-08-19
 ### Added

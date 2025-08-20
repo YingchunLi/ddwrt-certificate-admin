@@ -15,13 +15,27 @@ let mainWindow;
 const dialog = electron.dialog;
 
 function createWindow () {
+  // Allow dev server ports if restricted
+  if (process.env.ELECTRON_START_URL) {
+    const urlObj = new URL(process.env.ELECTRON_START_URL);
+    app.commandLine.appendSwitch('explicitly-allowed-ports', urlObj.port);
+  }
   console.log(`ELECTRON_START_URL=${process.env.ELECTRON_START_URL}`);
   if (process.env.ELECTRON_START_URL)  {
     // comment this out or change it if you have it on a different location
     const reactPluginPath = 'chromeExtensions/react_4.0.4_0';
     if (fs.existsSync(reactPluginPath)) {
       console.log('adding React Developer Tools chrome extension');
-      BrowserWindow.addDevToolsExtension(reactPluginPath);
+      try {
+        if (BrowserWindow.addDevToolsExtension) {
+          BrowserWindow.addDevToolsExtension(reactPluginPath);
+        } else if (electron.session && electron.session.defaultSession && electron.session.defaultSession.loadExtension) {
+          electron.session.defaultSession.loadExtension(path.resolve(reactPluginPath))
+            .catch((err) => console.log('failed to load devtools extension', err));
+        }
+      } catch (e) {
+        console.log('error loading devtools extension', e);
+      }
     } else {
       console.log(reactPluginPath + " does not exist. cannot load the plugin")
     }
@@ -30,7 +44,11 @@ function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 1024, height: 768,
     webPreferences: {
-      nodeIntegrationInWorker: true
+      nodeIntegration: true,
+      contextIsolation: false,
+      nodeIntegrationInWorker: true,
+      enableRemoteModule: true,
+      preload: path.join(__dirname, 'preload.js')
     }});
 
 
@@ -41,6 +59,14 @@ function createWindow () {
     slashes: true
   });
   mainWindow.loadURL(startUrl);
+
+  try {
+    // Initialize @electron/remote for renderer
+    require('@electron/remote/main').initialize();
+    require('@electron/remote/main').enable(mainWindow.webContents);
+  } catch (e) {
+    console.log('failed to initialize @electron/remote', e);
+  }
 
   // Open the DevTools.
   if (process.env.ELECTRON_START_URL) {

@@ -283,8 +283,9 @@ const ConfiguratorOutput = (
 
   const textFieldRows = 6;
 
-  const selectCAKeyDir = (e) => {
+  const selectCAKeyDir = async (e) => {
     const checkAndSetFilePath = (filePaths) => {
+      console.log('filePaths', filePaths);
       if (filePaths && filePaths.length > 0) {
         const caKeysDir = filePaths[0];
         try {
@@ -297,7 +298,14 @@ const ConfiguratorOutput = (
       }
     };
 
-    dialog.showOpenDialog( {properties: ['openDirectory']}, checkAndSetFilePath);
+    try {
+      const {canceled, filePaths} = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+      if (!canceled) {
+        checkAndSetFilePath(filePaths);
+      }
+    } catch (err) {
+      console.error('showOpenDialog failed', err);
+    }
     // e.preventDefault();
   };
 
@@ -619,7 +627,7 @@ const ConfiguratorOutput = (
                 </TableRowColumn>
                 <TableRowColumn style={{}}>
                   <div>
-                    Files are here: <FlatButton key="browseCertificateFilesFolder" label="Browse" primary={true} onClick={e => shell.openItem(executableDir)} />
+                    Files are here: <FlatButton key="browseCertificateFilesFolder" label="Browse" primary={true} onClick={async e => { try { await shell.openPath(executableDir); } catch (err) { console.error(err); } }} />
                   </div>
 
                   <br/>

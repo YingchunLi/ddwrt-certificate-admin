@@ -1,13 +1,14 @@
 import _ from "lodash";
 import ip from "ip";
 
-const electron = window.require('electron');
-export const remote = electron.remote;
-export const clipboard = electron.clipboard;
+// Use @electron/remote in modern Electron
+const { clipboard, shell } = window.require('electron');
+const remote = window.require('@electron/remote');
+export { remote, clipboard };
 export const dialog = remote.dialog;
-export const shell = electron.shell;
+export { shell };
 
-// normal import won't work for electron app, so special process here
+// Access Node modules through remote in renderer
 export const fs = remote.require('fs');
 export const os = remote.require('os');
 export const ping = remote.require('ping');
