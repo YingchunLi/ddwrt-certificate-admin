@@ -42,6 +42,7 @@ const INITIAL_STATE = {
     optSendLANTrafficOnly:  true,
     optCertificateOnlyAuth: true,
     optPrependClientOutputFileNameWithIPDDNSName: false,
+    optEmbedCertificates:   false,
   },
   serverOptions: [{username: 'server'}],
   clientOptions: isDev ? [{username: 'client1'},{username: 'client2'},{username: 'client3'}] : [{username: 'client1'}],
