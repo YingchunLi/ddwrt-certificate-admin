@@ -77,15 +77,14 @@ const generateClientOvpnForDDWRT = (vpnParameters, username, caCertPem, clientCe
 
   const certs = optEmbedCertificates ?
     `<ca>
-${caCertPem}
+${caCertPem.trim()}
 </ca>
 <cert>
-${clientCertPem}
+${clientCertPem.trim()}
 </cert>
 <key>
-${clientPrivateKeyPem}
-</key>
-`
+${clientPrivateKeyPem.trim()}
+</key>`
     :
     `ca ${username}-ca.crt
 cert ${username}.crt
@@ -112,15 +111,14 @@ const generateClientOvpnForEdgeRouter = (vpnParameters, username, caCertPem, cli
 
   const certs = optEmbedCertificates ?
     `<ca>
-${caCertPem}
+${caCertPem.trim()}
 </ca>
 <cert>
-${clientCertPem}
+${clientCertPem.trim()}
 </cert>
 <key>
-${clientPrivateKeyPem}
-</key>
-`
+${clientPrivateKeyPem.trim()}
+</key>`
     :
     `ca ${username}-ca.crt
 cert ${username}.crt
