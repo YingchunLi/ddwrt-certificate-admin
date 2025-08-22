@@ -19,6 +19,10 @@ and this project (kind of) adheres to [Semantic Versioning](http://semver.org/sp
 
 ## [Unreleased]
 
+## [2.3.3] - 2025-08-22
+### Added
+- Add new option to embed private key, CA and certificate in client .ovpn file
+
 ## [2.3.2] - 2025-08-20
 ### Added
 - Upgrade electron to 28.3.3
