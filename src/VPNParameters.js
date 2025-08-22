@@ -344,6 +344,12 @@ class VPNParameters extends Component {
                 }
 
                 {
+                  renderTableRow('Embed certificate and keys in ovpn file',
+                    renderRadioButtonGroup(['Yes', 'No'], [true, false],
+                      'optEmbedCertificates', vpnParameters, this.handleChange))
+                }
+
+                {
                   renderTableRow('Number of users to generate', numberOfUsersElement)
                 }
 

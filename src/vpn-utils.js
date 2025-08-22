@@ -12,7 +12,7 @@ export const VPN_OPTION_CA_USE_EXISTING_ROUTE = 'useExistingRoute';
 const copyFileSync = fs.copyFileSync || ((src, dest) => fs.writeFileSync(dest, fs.readFileSync(src)));
 
 /************* client configurations ***********/
-export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters, clientOptions, updateState) => {
+export const generateClientConfigs = async (caCert, caPrivateKey, caCertPem, vpnParameters, clientOptions, updateState) => {
   // create client key pair
   if (clientOptions && clientOptions.length > 0) {
     console.log('generating client certificates');
@@ -43,7 +43,7 @@ export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters,
         `${vpnParameters.networkPublicIpOrDDNSAddressOfRouter}-${username}` : username;
 
       // generate client opvn file
-      const clientOvpn = generateClientOvpn(vpnParameters, clientFilenamePrefix);
+      const clientOvpn = generateClientOvpn(vpnParameters, clientFilenamePrefix, caCertPem, clientCertPem, clientPrivateKeyPem);
       const clientDestDir = `${destDir}/${username}`;
       // const stat = fs.statSync(clientDestDir);
       // if (stat.isDirectory()) {
@@ -54,24 +54,43 @@ export const generateClientConfigs = async (caCert, caPrivateKey, vpnParameters,
         fs.mkdirSync(clientDestDir);
 
       }
-      fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.crt`, clientCertPem);
-      fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.key`, clientPrivateKeyPem);
+      if (!vpnParameters.optEmbedCertificates) {
+        fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.crt`, clientCertPem);
+        fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.key`, clientPrivateKeyPem);
+        copyFileSync(caCertFile, `${clientDestDir}/${clientFilenamePrefix}-ca.crt`);
+      }
       fs.writeFileSync(`${clientDestDir}/${clientFilenamePrefix}.ovpn`, clientOvpn);
-      copyFileSync(caCertFile, `${clientDestDir}/${clientFilenamePrefix}-ca.crt`)
-
     }
   }
 };
 
-const generateClientOvpn = (vpnParameters, username) => {
+const generateClientOvpn = (vpnParameters, username, caCertPem, clientCertPem, clientPrivateKeyPem) => {
   if (isDdWrtMode(vpnParameters.optRouterMode)) {
-    return generateClientOvpnForDDWRT(vpnParameters, username)
+    return generateClientOvpnForDDWRT(vpnParameters, username, caCertPem, clientCertPem, clientPrivateKeyPem)
   } else if (isEdgeRouterMode(vpnParameters.optRouterMode)) {
-    return generateClientOvpnForEdgeRouter(vpnParameters, username);
+    return generateClientOvpnForEdgeRouter(vpnParameters, username, caCertPem, clientCertPem, clientPrivateKeyPem);
   }
 };
 
-const generateClientOvpnForDDWRT = (vpnParameters, username) => {
+const generateClientOvpnForDDWRT = (vpnParameters, username, caCertPem, clientCertPem, clientPrivateKeyPem) => {
+  const {optEmbedCertificates} = vpnParameters;
+
+  const certs = optEmbedCertificates ?
+    `<ca>
+${caCertPem.trim()}
+</ca>
+<cert>
+${clientCertPem.trim()}
+</cert>
+<key>
+${clientPrivateKeyPem.trim()}
+</key>`
+    :
+    `ca ${username}-ca.crt
+cert ${username}.crt
+key ${username}.key
+`;
+
   return `client
 remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
 port ${vpnParameters.vpnPort}
@@ -83,13 +102,29 @@ comp-lzo
 route-gateway ${vpnParameters.routerInternalIP} 
 float
 
-ca ${username}-ca.crt
-cert ${username}.crt
-key ${username}.key
+${certs}
 `;
 };
 
-const generateClientOvpnForEdgeRouter = (vpnParameters, username) => {
+const generateClientOvpnForEdgeRouter = (vpnParameters, username, caCertPem, clientCertPem, clientPrivateKeyPem) => {
+  const {optEmbedCertificates} = vpnParameters;
+
+  const certs = optEmbedCertificates ?
+    `<ca>
+${caCertPem.trim()}
+</ca>
+<cert>
+${clientCertPem.trim()}
+</cert>
+<key>
+${clientPrivateKeyPem.trim()}
+</key>`
+    :
+    `ca ${username}-ca.crt
+cert ${username}.crt
+key ${username}.key
+`;
+
   return `client
 remote ${vpnParameters.networkPublicIpOrDDNSAddressOfRouter} ${vpnParameters.vpnPort}
 port ${vpnParameters.vpnPort}
@@ -103,9 +138,7 @@ persist-key
 persist-tun
 verb 3
 
-ca ${username}-ca.crt
-cert ${username}.crt
-key ${username}.key
+${certs}
 `
 };
 

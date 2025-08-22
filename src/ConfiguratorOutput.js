@@ -164,7 +164,7 @@ const ConfiguratorOutput = (
     await generateServerConfigs(caCert, caPrivateKey, vpnParameters, serverOptions, updateState);
 
     updateState('Generating client certificates');
-    await generateClientConfigs(caCert, caPrivateKey, vpnParameters, clientOptions, updateState);
+    await generateClientConfigs(caCert, caPrivateKey, caCertPem, vpnParameters, clientOptions, updateState);
 
     updateState('Generating dh pem');
     const dhParamsPem = await generateDHParam(isDev);
