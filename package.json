@@ -13,21 +13,22 @@
     "material-ui": "^0.20.0",
     "node-forge": "^1.3.2",
     "node-ssh": "^5.1.2",
+    "os-browserify": "^0.3.0",
     "ping": "^0.2.2",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
-    "react-scripts": "1.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
     "tmp": "^0.2.4"
   },
   "homepage": "./",
   "main": "electron-starter.js",
   "scripts": {
     "start": "nf start -p 5001",
-    "react-start": "react-scripts start",
+    "react-start": "craco start",
     "electron-start": "node electron-wait-react",
     "electron": "electron .",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
+    "build": "craco build",
+    "test": "craco test --env=jsdom",
     "eject": "react-scripts eject",
     "pack": "electron-builder --dir",
     "dist": "electron-builder -m -w",
@@ -39,6 +40,7 @@
     "electron": "^35.7.5",
     "electron-builder": "^24.8.0",
     "foreman": "^2.0.0",
+    "@craco/craco": "^7.1.0",
     "source-map-explorer": "^1.5.0"
   },
   "build": {
@@ -84,5 +86,17 @@
       ]
     }
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }
