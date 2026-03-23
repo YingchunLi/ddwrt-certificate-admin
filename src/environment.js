@@ -1,5 +1,30 @@
 import _ from "lodash";
-import ip from "ip";
+const ipUtils = {
+  isPrivate: (addr) => {
+    const parts = addr.split('.');
+    if (parts.length === 4) {
+      const p1 = parseInt(parts[0], 10);
+      const p2 = parseInt(parts[1], 10);
+      return (p1 === 10) ||
+             (p1 === 172 && (p2 >= 16 && p2 <= 31)) ||
+             (p1 === 192 && typeof p2 === 'number' && p2 === 168) ||
+             (p1 === 127) ||
+             (p1 === 169 && p2 === 254);
+    }
+    return /^fe80:/i.test(addr) || /^fc[0-9a-f]{2}:/i.test(addr) || /^fd[0-9a-f]{2}:/i.test(addr) || addr === '::1';
+  },
+  ipToInt: (ipStr) => {
+    if (!ipStr || typeof ipStr !== 'string') return 0;
+    return ipStr.split('.').reduce((int, octet) => (int << 8) + parseInt(octet, 10), 0) >>> 0;
+  },
+  intToIp: (int) => [(int >>> 24) & 255, (int >>> 16) & 255, (int >>> 8) & 255, int & 255].join('.'),
+  mask: (ipStr, maskStr) => {
+    return ipUtils.intToIp(ipUtils.ipToInt(ipStr) & ipUtils.ipToInt(maskStr));
+  },
+  or: (ipStr, maskStr) => {
+    return ipUtils.intToIp(ipUtils.ipToInt(ipStr) | ipUtils.ipToInt(maskStr));
+  }
+};
 
 // Use @electron/remote in modern Electron
 const { clipboard, shell } = window.require('electron');
@@ -45,7 +70,7 @@ _.forEach(interfaces, (addresses, interfaceName) => {
 
   noneInternalAddresses.forEach(address => {
     if (address.internal) return;
-    if (ip.isPrivate(address.address)) {
+    if (ipUtils.isPrivate(address.address)) {
       privateAddresses.push({interfaceName, ...address});
     } else {
       publicAddresses.push({interfaceName, ...address});
@@ -58,8 +83,8 @@ console.log('****publicAddresses', publicAddresses);
 console.log('****privateAddresses', privateAddresses);
 
 const privateAddress = privateAddresses.length > 0 && privateAddresses[0].address;
-export const internalNetwork = isDev ? (privateAddress ? ip.mask(privateAddress, '255.255.255.0'): '192.168.1.0') : '';
+export const internalNetwork = isDev ? (privateAddress ? ipUtils.mask(privateAddress, '255.255.255.0'): '192.168.1.0') : '';
 
-export const routerInternalIP = ip.or(internalNetwork, '0.0.0.1');
+export const routerInternalIP = ipUtils.or(internalNetwork, '0.0.0.1');
 
 export const publicAddress = publicAddresses.length > 0 ? publicAddresses[0].address :  '';
